@@ -335,6 +335,20 @@ CREATE TABLE IF NOT EXISTS payroll (
 )
 """
 
+# Create tables if not exist
+create_day_closeout_table_query = """
+CREATE TABLE IF NOT EXISTS day_closeout (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_username VARCHAR(255),
+    cash DECIMAL(10,2),
+    credit DECIMAL(10,2),
+    total DECIMAL(10,2),
+    difference DECIMAL(10,2),
+    date DATE,
+    notes TEXT
+)
+"""
+
 try:
     cursor.execute(create_invoice_table_query)
     cursor.execute(create_expense_table_query)
@@ -776,9 +790,104 @@ def load_select_action_page(role):
     action_menu = tk.OptionMenu(root, action_var, *actions)
     action_menu.pack(pady=5)
 
+
+
+# Function to load Enter Day Closeout Page
+def load_enter_day_closeout_page():
+    for widget in root.winfo_children():
+        widget.destroy()
+
+    tk.Label(root, text="Enter Day Closeout", font=("Arial", 16)).pack(pady=10)
+    tk.Label(root, text="You're logged in as Employee 1 in Store 1").pack(pady=5)
+
+    tk.Label(root, text="EMPLOYEE USERNAME").pack()
+    employee_username_entry = tk.Entry(root, width=30)
+    employee_username_entry.pack(pady=5)
+
+    tk.Label(root, text="CASH").pack()
+    cash_entry = tk.Entry(root, width=30)
+    cash_entry.pack(pady=5)
+
+    tk.Label(root, text="CREDIT").pack()
+    credit_entry = tk.Entry(root, width=30)
+    credit_entry.pack(pady=5)
+
+    tk.Label(root, text="TOTAL").pack()
+    total_entry = tk.Entry(root, width=30)
+    total_entry.pack(pady=5)
+
+    tk.Label(root, text="DIFFERENCE").pack()
+    difference_entry = tk.Entry(root, width=30)
+    difference_entry.pack(pady=5)
+
+    tk.Label(root, text="DATE").pack()
+    date_entry = tk.Entry(root, width=30)
+    date_entry.pack(pady=5)
+
+    tk.Label(root, text="NOTES").pack()
+    notes_entry = tk.Entry(root, width=30)
+    notes_entry.pack(pady=5)
+
+    def submit_day_closeout():
+        employee_username = employee_username_entry.get()
+        cash = cash_entry.get()
+        credit = credit_entry.get()
+        total = total_entry.get()
+        difference = difference_entry.get()
+        date = date_entry.get()
+        notes = notes_entry.get()
+
+        if not all([employee_username, cash, credit, total, difference, date]):
+            messagebox.showerror("Error", "Please fill in all fields except notes.")
+            return
+
+        try:
+            cursor.execute(
+                "INSERT INTO day_closeout (employee_username, cash, credit, total, difference, date, notes) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (employee_username, cash, credit, total, difference, date, notes)
+            )
+            conn.commit()
+            messagebox.showinfo("Success", "Day Closeout submitted successfully!")
+            load_enter_day_closeout_page()
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", f"Error inserting day closeout data: {err}")
+
+    submit_button = tk.Button(root, text="Sign Up", command=submit_day_closeout, width=20, bg="black", fg="white")
+    submit_button.pack(pady=10)
+
+    back_button = tk.Button(root, text="Back", command=lambda: load_select_action_page("Employee"), width=20,
+                            bg="black", fg="white")
+    back_button.pack(pady=5)
+
+
+# Modify function to navigate to Enter Day Closeout page
+def load_select_action_page(role):
+    for widget in root.winfo_children():
+        widget.destroy()
+
+    menu_text = "Owner/Manager Select an Action" if role in ["Owner", "Manager"] else "Employee Select an Action"
+    tk.Label(root, text=menu_text, font=("Arial", 16)).pack(pady=20)
+
+    actions = [
+        "Enter Invoice", "Enter Expense", "Enter Merchandise", "Enter Withdrawal",
+        "Calculate Employee Bonus", "Set Employee Rates", "Payroll", "Add Employee",
+        "View Records", "Enter Day Closeout"
+    ] if role in ["Owner", "Manager"] else [
+        "Enter Expense", "Enter Day Closeout", "Enter In/Out Balance"
+    ]
+
+    action_var = tk.StringVar(root)
+    action_var.set(actions[0])
+
+    tk.Label(root, text="Select Action").pack()
+    action_menu = tk.OptionMenu(root, action_var, *actions)
+    action_menu.pack(pady=5)
+
     def next_action():
         selected_action = action_var.get()
-        if selected_action == "Payroll":
+        if selected_action == "Enter Day Closeout":
+            load_enter_day_closeout_page()
+        elif selected_action == "Payroll":
             load_payroll_page()
         elif selected_action == "Set Employee Rates":
             load_set_employee_rates_page()
@@ -799,6 +908,13 @@ def load_select_action_page(role):
 
     next_button = tk.Button(root, text="Next", command=next_action, width=20, bg="black", fg="white")
     next_button.pack(pady=10)
+
+
+
+
+
+
+
 
 
 
