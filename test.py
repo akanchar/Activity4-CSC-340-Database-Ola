@@ -46,6 +46,9 @@ class AlohaCorpApp(tk.Tk):
         # Create the top menu bar
         self.create_top_bar()
 
+        #self.initiate_login()
+
+
         # Main content area
         self.main_frame = tk.Frame(self, bg="white")
         self.main_frame.pack(expand=True, fill="both")
@@ -217,6 +220,16 @@ class AlohaCorpApp(tk.Tk):
             except Error as err:
                 print(f"Error creating users table: {err}")
 
+    def initiate_login(self):
+        # function to create initial owner login
+        pass1 = 'pass'
+        hashed_pass1 = bcrypt.hashpw(pass1.encode('utf-8'), bcrypt.gensalt())
+        insert_query = "INSERT INTO users (ID, name, password, role) VALUES (%s, %s, %s, %s)"
+        cursor = self.connection.cursor()
+        cursor.execute(insert_query, (123, 'andrew', hashed_pass1, 'Owner'))
+        self.connection.commit()
+
+
     def create_top_bar(self):
         top_bar = tk.Frame(self, bg="white", height=40)
         top_bar.pack(side="top", fill="x")
@@ -259,6 +272,7 @@ class AlohaCorpApp(tk.Tk):
     def show_welcome_screen(self):
         self.current_mode = None
         self.clear_main_frame()
+
 
         heading_label = tk.Label(
             self.main_frame,
@@ -1221,6 +1235,7 @@ class AlohaCorpApp(tk.Tk):
         amount = self.invoice_amount_entry.get()
         date_received = self.invoice_date_received_entry.get()
         date_due = self.invoice_date_due_entry.get()
+        status = "Not Paid"
 
         messagebox.showinfo(
             "Invoice Submitted",
@@ -1230,6 +1245,26 @@ class AlohaCorpApp(tk.Tk):
             f"Date Received: {date_received}\n"
             f"Date Due: {date_due}"
         )
+
+        if not self.connection:
+            messagebox.showwarning("Warning", "No database connection. This is a demo.")
+            return
+
+        if not (invoice_num and company and amount and date_received and date_due):
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        try:
+            cursor = self.connection.cursor()
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            query = "INSERT INTO invoices (status, date_received, company, invoice_number, amount, date_due) VALUES (%s, %s, %s, %s, %s, %s)"
+            cursor.execute(query, (status, date_received, company, invoice_num, amount, date_due))
+            self.connection.commit()
+            messagebox.showinfo("Success", f"New user '{name}' added with role '{role}'.")
+            self.go_back()  # Return to the previous screen
+        except Error as err:
+            messagebox.showerror("Database Error", f"Error creating user: {err}")
+
 
     def show_payroll_form(self):
         """
