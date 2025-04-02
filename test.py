@@ -964,6 +964,24 @@ class AlohaCorpApp(tk.Tk):
             f"Expense Type: {expense_type}\nExpense Value: {expense_value}\nDate: {date_val}"
         )
 
+        if not self.connection:
+            messagebox.showwarning("Warning", "No database connection. This is a demo.")
+            return
+
+        if not (expense_type and expense_value and date_val):
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        try:
+            cursor = self.connection.cursor()
+            query = "INSERT INTO expenses (expense_type, expense_value, date) VALUES (%s, %s, %s)"
+            cursor.execute(query, (expense_type, expense_value, date_val))
+            self.connection.commit()
+            messagebox.showinfo("Success", "Expense added")
+            self.go_back()  # Return to the previous screen
+        except Error as err:
+            messagebox.showerror("Database Error", "Expense not added")
+
     # ----------------------------------------------------------------
     # MANAGER & OWNER HOME SCREENS
     # ----------------------------------------------------------------
@@ -1267,10 +1285,10 @@ class AlohaCorpApp(tk.Tk):
             query = "INSERT INTO invoices (status, date_received, company, invoice_number, amount, date_due) VALUES (%s, %s, %s, %s, %s, %s)"
             cursor.execute(query, (status, date_received, company, invoice_num, amount, date_due))
             self.connection.commit()
-            messagebox.showinfo("Success", f"New user '{name}' added with role '{role}'.")
+            messagebox.showinfo("Success", "Invoice added")
             self.go_back()  # Return to the previous screen
         except Error as err:
-            messagebox.showerror("Database Error", f"Error creating user: {err}")
+            messagebox.showerror("Database Error", "Invoice not added")
 
 
     def show_payroll_form(self):
@@ -1618,7 +1636,24 @@ class AlohaCorpApp(tk.Tk):
             f"Date: {date_val}"
         )
 
-        # Later, you can add code here to insert these values into your DB.
+        if not self.connection:
+            messagebox.showwarning("Warning", "No database connection. This is a demo.")
+            return
+
+        if not (merch_type and merch_value and date_val):
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        try:
+            cursor = self.connection.cursor()
+            query = "INSERT INTO merchandise (merchandise_type, merchandise_value, date) VALUES (%s, %s, %s)"
+            cursor.execute(query, (merch_type, merch_value, date_val))
+            self.connection.commit()
+            messagebox.showinfo("Success", "Merchandise added")
+            self.go_back()  # Return to the previous screen
+        except Error as err:
+            messagebox.showerror("Database Error", "Merchandise not added")
+
 
     def show_calc_bonus_form(self):
         """
