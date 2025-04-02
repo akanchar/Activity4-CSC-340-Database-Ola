@@ -37,6 +37,14 @@ class AlohaCorpApp(tk.Tk):
             if self.connection.is_connected():
                 print("Successfully connected to MySQL database")
                 self.create_users_table()  # Create (or confirm) the users table if it doesn't exist
+                self.create_invoices_table()
+                self.create_merchandise_table()
+                self.create_expenses_table()
+                self.create_employee_bonus_table()
+                self.create_employee_rates_table()
+                self.create_withdrawals_table()
+                self.create_payroll_table()
+                self.create_day_closeout_table()
             else:
                 print("Connection failed")
         except Error as e:
@@ -1256,7 +1264,6 @@ class AlohaCorpApp(tk.Tk):
 
         try:
             cursor = self.connection.cursor()
-            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
             query = "INSERT INTO invoices (status, date_received, company, invoice_number, amount, date_due) VALUES (%s, %s, %s, %s, %s, %s)"
             cursor.execute(query, (status, date_received, company, invoice_num, amount, date_due))
             self.connection.commit()
