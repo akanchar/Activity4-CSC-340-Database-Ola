@@ -54,10 +54,6 @@ class AlohaCorpApp(tk.Tk):
         self.show_welcome_screen()
 
     def create_users_table(self):
-        """
-        Uses your original table structure:
-          id, name, password, role
-        """
         create_table_query = """
         CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -73,6 +69,153 @@ class AlohaCorpApp(tk.Tk):
             print("Users table is ready.")
         except Error as err:
             print(f"Error creating users table: {err}")
+
+    def create_invoices_table(self):
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS invoices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    status VARCHAR(50),
+    date_received DATE,
+    company VARCHAR(255),
+    invoice_number VARCHAR(50),
+    amount DECIMAL(10,2),
+    date_due DATE
+)
+        """
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(create_table_query)
+            self.connection.commit()
+            print("Users table is ready.")
+        except Error as err:
+            print(f"Error creating users table: {err}")
+
+    def create_expenses_table(self):
+            create_table_query = """
+            CREATE TABLE IF NOT EXISTS expenses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    expense_type VARCHAR(255),
+    expense_value DECIMAL(10,2),
+    date DATE
+)
+            """
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute(create_table_query)
+                self.connection.commit()
+                print("Users table is ready.")
+            except Error as err:
+                print(f"Error creating users table: {err}")
+
+    def create_merchandise_table(self):
+            create_table_query = """
+            CREATE TABLE IF NOT EXISTS merchandise (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    merchandise_type VARCHAR(255),
+    merchandise_value DECIMAL(10,2),
+    date DATE
+)
+            """
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute(create_table_query)
+                self.connection.commit()
+                print("Users table is ready.")
+            except Error as err:
+                print(f"Error creating users table: {err}")
+
+    def create_withdrawals_table(self):
+            create_table_query = """
+            CREATE TABLE IF NOT EXISTS withdrawals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255),
+    user_id INT,
+    amount DECIMAL(10,2)
+)
+            """
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute(create_table_query)
+                self.connection.commit()
+                print("Users table is ready.")
+            except Error as err:
+                print(f"Error creating users table: {err}")
+
+    def create_employee_bonus_table(self):
+            create_table_query = """
+            CREATE TABLE IF NOT EXISTS employee_bonus (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT,
+    location VARCHAR(255),
+    start_date DATE,
+    end_date DATE,
+    bonus_amount DECIMAL(10,2)
+)
+            """
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute(create_table_query)
+                self.connection.commit()
+                print("Users table is ready.")
+            except Error as err:
+                print(f"Error creating users table: {err}")
+
+    def create_employee_rates_table(self):
+            create_table_query = """
+            CREATE TABLE IF NOT EXISTS employee_rates (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT,
+    location VARCHAR(255),
+    bonus_rate DECIMAL(5,2),
+    rate_per_hour DECIMAL(10,2),
+    date DATE
+)
+            """
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute(create_table_query)
+                self.connection.commit()
+                print("Users table is ready.")
+            except Error as err:
+                print(f"Error creating users table: {err}")
+
+    def create_payroll_table(self):
+        create_table_query = """
+                CREATE TABLE IF NOT EXISTS payroll (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    start_date DATE,
+    end_date DATE,
+    multiple_weeks_view BOOLEAN
+)
+                """
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(create_table_query)
+            self.connection.commit()
+            print("Users table is ready.")
+        except Error as err:
+            print(f"Error creating users table: {err}")
+
+    def create_day_closeout_table(self):
+            create_table_query = """
+                CREATE TABLE IF NOT EXISTS day_closeout (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_username VARCHAR(255),
+    cash DECIMAL(10,2),
+    credit DECIMAL(10,2),
+    total DECIMAL(10,2),
+    difference DECIMAL(10,2),
+    date DATE,
+    notes TEXT
+)
+                """
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute(create_table_query)
+                self.connection.commit()
+                print("Users table is ready.")
+            except Error as err:
+                print(f"Error creating users table: {err}")
 
     def create_top_bar(self):
         top_bar = tk.Frame(self, bg="white", height=40)
