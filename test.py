@@ -77,7 +77,6 @@ class AlohaCorpApp(tk.Tk):
             cursor = self.connection.cursor()
             cursor.execute(create_table_query)
             self.connection.commit()
-            print("Users table is ready.")
         except Error as err:
             print(f"Error creating users table: {err}")
 
@@ -97,9 +96,8 @@ class AlohaCorpApp(tk.Tk):
             cursor = self.connection.cursor()
             cursor.execute(create_table_query)
             self.connection.commit()
-            print("Users table is ready.")
         except Error as err:
-            print(f"Error creating users table: {err}")
+            print(f"Error creating invoices table: {err}")
 
     def create_expenses_table(self):
             create_table_query = """
@@ -114,9 +112,8 @@ class AlohaCorpApp(tk.Tk):
                 cursor = self.connection.cursor()
                 cursor.execute(create_table_query)
                 self.connection.commit()
-                print("Users table is ready.")
             except Error as err:
-                print(f"Error creating users table: {err}")
+                print(f"Error creating expenses table: {err}")
 
     def create_merchandise_table(self):
             create_table_query = """
@@ -131,9 +128,8 @@ class AlohaCorpApp(tk.Tk):
                 cursor = self.connection.cursor()
                 cursor.execute(create_table_query)
                 self.connection.commit()
-                print("Users table is ready.")
             except Error as err:
-                print(f"Error creating users table: {err}")
+                print(f"Error creating merchandise table: {err}")
 
     def create_withdrawals_table(self):
             create_table_query = """
@@ -148,9 +144,8 @@ class AlohaCorpApp(tk.Tk):
                 cursor = self.connection.cursor()
                 cursor.execute(create_table_query)
                 self.connection.commit()
-                print("Users table is ready.")
             except Error as err:
-                print(f"Error creating users table: {err}")
+                print(f"Error creating withdrawals table: {err}")
 
     def create_employee_bonus_table(self):
             create_table_query = """
@@ -167,9 +162,8 @@ class AlohaCorpApp(tk.Tk):
                 cursor = self.connection.cursor()
                 cursor.execute(create_table_query)
                 self.connection.commit()
-                print("Users table is ready.")
             except Error as err:
-                print(f"Error creating users table: {err}")
+                print(f"Error creating bonus table: {err}")
 
     def create_employee_rates_table(self):
             create_table_query = """
@@ -186,9 +180,8 @@ class AlohaCorpApp(tk.Tk):
                 cursor = self.connection.cursor()
                 cursor.execute(create_table_query)
                 self.connection.commit()
-                print("Users table is ready.")
             except Error as err:
-                print(f"Error creating users table: {err}")
+                print(f"Error creating rates table: {err}")
 
     def create_payroll_table(self):
         create_table_query = """
@@ -203,9 +196,8 @@ class AlohaCorpApp(tk.Tk):
             cursor = self.connection.cursor()
             cursor.execute(create_table_query)
             self.connection.commit()
-            print("Users table is ready.")
         except Error as err:
-            print(f"Error creating users table: {err}")
+            print(f"Error creating payroll table: {err}")
 
     def create_day_closeout_table(self):
             create_table_query = """
@@ -450,6 +442,9 @@ class AlohaCorpApp(tk.Tk):
                 return
 
             user_id, stored_password, role = result
+
+            self.user_role = role
+
             # Verify the password using bcrypt.
             if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
                 messagebox.showinfo("Success", f"Welcome, {username}!")
@@ -2073,8 +2068,19 @@ class AlohaCorpApp(tk.Tk):
     # NAVIGATION & MISC
     # ----------------------------------------------------------------
     def go_back(self):
-        # On the welcome screen, do nothing special.
-        self.show_welcome_screen()
+        if hasattr(self, "user_role"):
+            if self.user_role == "Manager":
+                self.show_manager_home()
+            elif self.user_role == "Owner":
+                self.show_owner_home()
+            elif self.user_role == "Employee":
+                self.show_employee_home()
+            else:
+                messagebox.showerror("Error", "Unknown role. Returning to welcome screen.")
+                self.show_welcome_screen()
+        else:
+            # If no role is stored, return to the welcome screen
+            self.show_welcome_screen()
 
     def option1_action(self):
         print("Option 1 selected.")
