@@ -745,14 +745,12 @@ class AlohaCorpApp(tk.Tk):
         # Date (dropdown)
         date_label = tk.Label(self.main_frame, text="DATE", bg="white", fg="black", font=self.sub_font)
         date_label.pack(pady=(0, 2))
-        self.dayclose_date_var = tk.StringVar()
-        dates = ["Select", "2025-01-01", "2025-01-02"]  # Hardcoded examples
-        self.dayclose_date_var.set(dates[0])
-        dayclose_date_dropdown = ttk.Combobox(
+        dayclose_date_dropdown = DateEntry(
             self.main_frame,
-            textvariable=self.dayclose_date_var,
-            values=dates,
-            state="readonly"
+            width=28,
+            background='darkblue',
+            foreground='white',
+            borderwidth=2
         )
         dayclose_date_dropdown.pack(pady=(0, 10))
 
@@ -849,14 +847,12 @@ class AlohaCorpApp(tk.Tk):
         # Date (dropdown)
         date_label = tk.Label(self.main_frame, text="DATE", bg="white", fg="black", font=self.sub_font)
         date_label.pack(pady=(0, 2))
-        self.inout_date_var = tk.StringVar()
-        dates = ["Select", "2025-01-01", "2025-01-02"]
-        self.inout_date_var.set(dates[0])
-        inout_date_dropdown = ttk.Combobox(
+        inout_date_dropdown = DateEntry(
             self.main_frame,
-            textvariable=self.inout_date_var,
-            values=dates,
-            state="readonly"
+            width=28,
+            background='darkblue',
+            foreground='white',
+            borderwidth=2
         )
         inout_date_dropdown.pack(pady=(0, 10))
 
@@ -928,14 +924,12 @@ class AlohaCorpApp(tk.Tk):
         # Date (dropdown)
         date_label = tk.Label(self.main_frame, text="DATE", bg="white", fg="black", font=self.sub_font)
         date_label.pack(pady=(0, 2))
-        self.expense_date_var = tk.StringVar()
-        dates = ["Select", "2025-01-01", "2025-01-02"]
-        self.expense_date_var.set(dates[0])
-        expense_date_dropdown = ttk.Combobox(
+        expense_date_dropdown = DateEntry(
             self.main_frame,
-            textvariable=self.expense_date_var,
-            values=dates,
-            state="readonly"
+            width=28,
+            background='darkblue',
+            foreground='white',
+            borderwidth=2
         )
         expense_date_dropdown.pack(pady=(0, 10))
 
@@ -1226,7 +1220,13 @@ class AlohaCorpApp(tk.Tk):
             font=self.sub_font
         )
         date_received_label.pack(pady=(0, 2))
-        self.invoice_date_received_entry = tk.Entry(self.main_frame, width=30)
+        self.invoice_date_received_entry = DateEntry(
+            self.main_frame,
+            width=28,
+            background='darkblue',
+            foreground='white',
+            borderwidth=2
+        )
         self.invoice_date_received_entry.pack(pady=(0, 10))
 
         # Date Due field
@@ -1238,7 +1238,13 @@ class AlohaCorpApp(tk.Tk):
             font=self.sub_font
         )
         date_due_label.pack(pady=(0, 2))
-        self.invoice_date_due_entry = tk.Entry(self.main_frame, width=30)
+        self.invoice_date_due_entry = DateEntry(
+            self.main_frame,
+            width=28,
+            background='darkblue',
+            foreground='white',
+            borderwidth=2
+        )
         self.invoice_date_due_entry.pack(pady=(0, 10))
 
         # Submit button – same style as in Add Employee form.
@@ -1510,7 +1516,33 @@ class AlohaCorpApp(tk.Tk):
             f"Username: {username}\nID: {user_id}\nAmount: {amount}"
         )
 
-        # Later, you can add code here to insert these values into your DB.
+        if not (username and user_id and amount):
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        try:
+            cursor = self.connection.cursor()
+            query = "SELECT name, id FROM users WHERE name = %s AND id = %s"
+            cursor.execute(query, (username, user_id))
+            result = cursor.fetchone()
+
+            if not result:
+                messagebox.showerror("Error", "Employee ID and username not found.")
+                return
+
+        except Error as err:
+            messagebox.showerror("Database Error", "Error fetching employee ID")
+            return  # Ensure function exits on database error
+
+        try:
+            cursor = self.connection.cursor()
+            query = "INSERT INTO withdrawals (username, user_id, amount) VALUES (%s, %s, %s)"
+            cursor.execute(query, (username, user_id, amount))
+            self.connection.commit()
+            messagebox.showinfo("Success", "Withdrawal added")
+            self.go_back()  # Return to the previous screen
+        except Error as err:
+            messagebox.showerror("Database Error", "Withdrawal not added")
 
     def show_merchandise_form(self):
         """
@@ -1578,30 +1610,14 @@ class AlohaCorpApp(tk.Tk):
         )
         date_label.pack(pady=(0, 2))
 
-        # Option A: Using a simple dropdown (hard-coded dates)
-        self.merch_date_var = tk.StringVar()
-        dates = ["Select", "2025-01-01", "2025-01-02"]
-        self.merch_date_var.set(dates[0])
-        date_dropdown = ttk.Combobox(
+        self.merch_date_entry = DateEntry(
             self.main_frame,
-            textvariable=self.merch_date_var,
-            values=dates,
-            state="readonly",
-            width=28
+            width=28,
+            background='darkblue',
+            foreground='white',
+            borderwidth=2
         )
-        date_dropdown.pack(pady=(0, 20))
-
-        # Option B: If you want a calendar date picker from tkcalendar, use:
-        #
-        # from tkcalendar import DateEntry
-        # self.merch_date_entry = DateEntry(
-        #     self.main_frame,
-        #     width=28,
-        #     background='darkblue',
-        #     foreground='white',
-        #     borderwidth=2
-        # )
-        # self.merch_date_entry.pack(pady=(0, 20))
+        self.merch_date_entry.pack(pady=(0, 20))
 
         # Submit button
         submit_button = tk.Button(
@@ -1623,11 +1639,9 @@ class AlohaCorpApp(tk.Tk):
         merch_type = self.merch_type_entry.get()
         merch_value = self.merch_value_entry.get()
 
-        # If you're using a simple dropdown:
-        date_val = self.merch_date_var.get()
 
-        # If you're using a DateEntry widget from tkcalendar:
-        # date_val = self.merch_date_entry.get_date()
+
+        date_val = self.merch_date_entry.get_date()
 
         messagebox.showinfo(
             "Enter Merchandise",
@@ -1710,7 +1724,7 @@ class AlohaCorpApp(tk.Tk):
         location_label.pack(pady=(0, 2))
         self.location_var = tk.StringVar()
         # Example location list
-        locations = ["Select", "Store 1", "Store 2", "Full Access"]
+        locations = ["Select", "Store 1", "Store 2", "Store 3"]
         self.location_var.set(locations[0])
         location_dropdown = ttk.Combobox(
             self.main_frame,
@@ -1730,6 +1744,7 @@ class AlohaCorpApp(tk.Tk):
             font=self.sub_font
         )
         start_label.pack(pady=(0, 2))
+
         self.start_date = DateEntry(
             self.main_frame,
             width=28,
@@ -1807,8 +1822,7 @@ class AlohaCorpApp(tk.Tk):
         loc_label = tk.Label(self.main_frame, text="LOCATION", bg="white", fg="black", font=self.sub_font)
         loc_label.pack(pady=(0, 2))
         self.rates_location_var = tk.StringVar()
-        # Example list of locations
-        locations = ["Select", "Store 1", "Store 2", "Full Access"]
+        locations = ["Select", "Store 1", "Store 2", "Store 3"]
         self.rates_location_var.set(locations[0])
         loc_dropdown = ttk.Combobox(
             self.main_frame,
@@ -1829,14 +1843,14 @@ class AlohaCorpApp(tk.Tk):
         bonus_label = tk.Label(self.main_frame, text="BONUS RATE", bg="white", fg="black", font=self.sub_font)
         bonus_label.pack(pady=(0, 2))
         self.rates_bonus_entry = tk.Entry(self.main_frame, width=30)
-        self.rates_bonus_entry.insert(0, "25%")  # Example default
+        self.rates_bonus_entry.insert(0, "0.02")  # Example default
         self.rates_bonus_entry.pack(pady=(0, 10))
 
         # Rate Per Hour
         rate_label = tk.Label(self.main_frame, text="RATE PER HOUR", bg="white", fg="black", font=self.sub_font)
         rate_label.pack(pady=(0, 2))
         self.rates_hour_entry = tk.Entry(self.main_frame, width=30)
-        self.rates_hour_entry.insert(0, "$16.00")  # Example default
+        self.rates_hour_entry.insert(0, "16.00")  # Example default
         self.rates_hour_entry.pack(pady=(0, 10))
 
         # Date (DateEntry)
@@ -1884,7 +1898,37 @@ class AlohaCorpApp(tk.Tk):
             f"Date: {date_val}"
         )
 
-        # You can later add code here to insert these values into your DB.
+        if not self.connection:
+            messagebox.showwarning("Warning", "No database connection. This is a demo.")
+            return
+
+        if not (location and emp_id and bonus_rate and rate_per_hour and date_val):
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        try:
+            cursor = self.connection.cursor()
+            query = "SELECT id FROM users WHERE id = %s"
+            cursor.execute(query, (emp_id))
+            result = cursor.fetchone()
+
+            if not result:
+                messagebox.showerror("Error", "Employee ID not found.")
+                return
+
+        except Error as err:
+            messagebox.showerror("Database Error", "Error fetching employee ID")
+            return  # Ensure function exits on database error
+
+        try:
+            cursor = self.connection.cursor()
+            query = "INSERT INTO employee_rates (employee_id, location, bonus_rate, rate_per_hour, date) VALUES (%s, %s, %s, %s, %s)"
+            cursor.execute(query, (emp_id, location, bonus_rate, rate_per_hour, date_val))
+            self.connection.commit()
+            messagebox.showinfo("Success", "Rates added")
+            self.go_back()  # Return to the previous screen
+        except Error as err:
+            messagebox.showerror("Database Error", "Rates not added")
 
     def process_calc_bonus(self):
         """
