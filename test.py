@@ -258,7 +258,7 @@ class AlohaCorpApp(tk.Tk):
         menu_button.pack(side="right", padx=10, pady=5)
 
         dot_menu = tk.Menu(menu_button, tearoff=0)
-        dot_menu.add_command(label="Option 1", command=self.option1_action)
+        dot_menu.add_command(label="Sign Out", command=self.option1_action)
         dot_menu.add_command(label="Option 2", command=self.option2_action)
         menu_button["menu"] = dot_menu
 
@@ -756,16 +756,16 @@ class AlohaCorpApp(tk.Tk):
         self.dayclose_notes_entry.pack(pady=(0, 10))
 
         # sign up (submit) button
-        signup_button = tk.Button(
+        submit_button = tk.Button(
             self.main_frame,
-            text="sign up",
+            text="Submit",
             bg="black",
             fg="white",
             width=20,
             height=2,
             command=self.process_day_closeout
         )
-        signup_button.pack(pady=10)
+        submit_button.pack(pady=10)
 
     def process_day_closeout(self):
         """
@@ -1001,7 +1001,7 @@ class AlohaCorpApp(tk.Tk):
         manager_options = [
             "Enter Invoice",
             "Enter Expense",
-            "Enter Day Gross Sales",
+            "Enter Day Closeout",
             "Enter Withdraw",
             "Calculate Employee Bonus",
             "Add Employee",
@@ -1333,17 +1333,14 @@ class AlohaCorpApp(tk.Tk):
         from_label.pack(pady=(0, 2))
 
         self.from_date_var = tk.StringVar()
-        # Example list of date ranges
-        from_dates = ["2/4 - 2/8", "2/11 - 2/15", "2/18 - 2/22"]
-        self.from_date_var.set(from_dates[0])
-        from_dropdown = ttk.Combobox(
+        payroll_from_dropdown = DateEntry(
             self.main_frame,
-            textvariable=self.from_date_var,
-            values=from_dates,
-            state="readonly",
-            width=28
+            width=28,
+            background='darkblue',
+            foreground='white',
+            borderwidth=2
         )
-        from_dropdown.pack(pady=(0, 10))
+        payroll_from_dropdown.pack(pady=(0, 10))
 
         # TO date
         to_label = tk.Label(
@@ -1356,17 +1353,14 @@ class AlohaCorpApp(tk.Tk):
         to_label.pack(pady=(0, 2))
 
         self.to_date_var = tk.StringVar()
-        # Example list of date ranges
-        to_dates = ["2/4 - 2/8", "2/11 - 2/15", "2/18 - 2/22"]
-        self.to_date_var.set(to_dates[0])
-        to_dropdown = ttk.Combobox(
+        payroll_to_dropdown = DateEntry(
             self.main_frame,
-            textvariable=self.to_date_var,
-            values=to_dates,
-            state="readonly",
-            width=28
+            width=28,
+            background='darkblue',
+            foreground='white',
+            borderwidth=2
         )
-        to_dropdown.pack(pady=(0, 10))
+        payroll_to_dropdown.pack(pady=(0, 10))
 
         # Optional: Multiple Weeks View checkbox
         self.multiple_weeks_var = tk.BooleanVar(value=False)
@@ -2082,8 +2076,13 @@ class AlohaCorpApp(tk.Tk):
             # If no role is stored, return to the welcome screen
             self.show_welcome_screen()
 
+    # def option1_action(self):
+    #     print("Option 1 selected.")
+
     def option1_action(self):
-        print("Option 1 selected.")
+        # Clear any session-specific data if necessary here.
+        self.show_welcome_screen()
+        messagebox.showinfo("Sign Out", "You have been signed out successfully.")
 
     def option2_action(self):
         print("Option 2 selected.")
