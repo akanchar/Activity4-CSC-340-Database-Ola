@@ -952,14 +952,14 @@ class AlohaCorpApp(tk.Tk):
         # Date (dropdown)
         date_label = tk.Label(self.main_frame, text="DATE", bg="white", fg="black", font=self.sub_font)
         date_label.pack(pady=(0, 2))
-        expense_date_dropdown = DateEntry(
+        self.expense_date_var = DateEntry(
             self.main_frame,
             width=28,
             background='darkblue',
             foreground='white',
             borderwidth=2
         )
-        expense_date_dropdown.pack(pady=(0, 10))
+        self.expense_date_var.pack(pady=(0, 10))
 
         # Submit button
         submit_button = tk.Button(
