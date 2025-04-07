@@ -740,14 +740,14 @@ class AlohaCorpApp(tk.Tk):
         # Date (dropdown)
         date_label = tk.Label(self.main_frame, text="DATE", bg="white", fg="black", font=self.sub_font)
         date_label.pack(pady=(0, 2))
-        dayclose_date_dropdown = DateEntry(
+        self.dayclose_date_dropdown = DateEntry(
             self.main_frame,
             width=28,
             background='darkblue',
             foreground='white',
             borderwidth=2
         )
-        dayclose_date_dropdown.pack(pady=(0, 10))
+        self.dayclose_date_dropdown.pack(pady=(0, 10))
 
         # Notes
         notes_label = tk.Label(self.main_frame, text="NOTES", bg="white", fg="black", font=self.sub_font)
@@ -769,21 +769,54 @@ class AlohaCorpApp(tk.Tk):
 
     def process_day_closeout(self):
         """
-        Just shows a message for now (no DB insert).
+        Processes the day closeout form.
+        Retrieves the entered data, displays the values for confirmation,
+        validates the input, and inserts the record into the day_closeout table.
         """
         emp_username = self.dayclose_emp_entry.get()
         cash = self.dayclose_cash_entry.get()
         credit = self.dayclose_credit_entry.get()
         total = self.dayclose_total_entry.get()
         diff = self.dayclose_diff_entry.get()
-        date_val = self.dayclose_date_var.get()
+        # Retrieve the date from the DateEntry widget; ensure it's stored as an instance variable.
+        date_val = self.dayclose_date_dropdown.get()
         notes = self.dayclose_notes_entry.get()
 
+        # Display the entered values for confirmation.
         messagebox.showinfo(
-            "Day Closeout",
-            f"Employee: {emp_username}\nCash: {cash}\nCredit: {credit}\nTotal: {total}\n"
-            f"Difference: {diff}\nDate: {date_val}\nNotes: {notes}"
+            "Day Closeout Submitted",
+            f"Employee: {emp_username}\n"
+            f"Cash: {cash}\n"
+            f"Credit: {credit}\n"
+            f"Total: {total}\n"
+            f"Difference: {diff}\n"
+            f"Date: {date_val}\n"
+            f"Notes: {notes}"
         )
+
+        # Check for a valid database connection.
+        if not self.connection:
+            messagebox.showwarning("Warning", "No database connection. This is a demo.")
+            return
+
+        # Validate that all required fields are provided.
+        if not (emp_username and cash and credit and total and diff and date_val):
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        try:
+            cursor = self.connection.cursor()
+            query = """
+                INSERT INTO day_closeout 
+                (employee_username, cash, credit, total, difference, date, notes) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(query, (emp_username, cash, credit, total, diff, date_val, notes))
+            self.connection.commit()
+            messagebox.showinfo("Success", "Day closeout data added")
+            self.go_back()  # Return to the previous screen
+        except Error as err:
+            messagebox.showerror("Database Error", "Day closeout data not added")
 
     def show_in_out_balance_form(self):
         """
