@@ -4,6 +4,7 @@ import mysql.connector
 from mysql.connector import Error
 import bcrypt
 from tkcalendar import DateEntry
+from datetime import datetime
 
 class AlohaCorpApp(tk.Tk):
     def __init__(self):
@@ -737,6 +738,7 @@ class AlohaCorpApp(tk.Tk):
         self.dayclose_diff_entry = tk.Entry(self.main_frame, width=30)
         self.dayclose_diff_entry.pack(pady=(0, 10))
 
+
         # Date (dropdown)
         date_label = tk.Label(self.main_frame, text="DATE", bg="white", fg="black", font=self.sub_font)
         date_label.pack(pady=(0, 2))
@@ -745,7 +747,11 @@ class AlohaCorpApp(tk.Tk):
             width=28,
             background='darkblue',
             foreground='white',
-            borderwidth=2
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
         )
         self.dayclose_date_dropdown.pack(pady=(0, 10))
 
@@ -880,7 +886,11 @@ class AlohaCorpApp(tk.Tk):
             width=28,
             background='darkblue',
             foreground='white',
-            borderwidth=2
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
         )
         inout_date_dropdown.pack(pady=(0, 10))
 
@@ -957,7 +967,11 @@ class AlohaCorpApp(tk.Tk):
             width=28,
             background='darkblue',
             foreground='white',
-            borderwidth=2
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
         )
         self.expense_date_var.pack(pady=(0, 10))
 
@@ -1253,7 +1267,11 @@ class AlohaCorpApp(tk.Tk):
             width=28,
             background='darkblue',
             foreground='white',
-            borderwidth=2
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
         )
         self.invoice_date_received_entry.pack(pady=(0, 10))
 
@@ -1271,7 +1289,11 @@ class AlohaCorpApp(tk.Tk):
             width=28,
             background='darkblue',
             foreground='white',
-            borderwidth=2
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
         )
         self.invoice_date_due_entry.pack(pady=(0, 10))
 
@@ -1371,7 +1393,11 @@ class AlohaCorpApp(tk.Tk):
             width=28,
             background='darkblue',
             foreground='white',
-            borderwidth=2
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
         )
         payroll_from_dropdown.pack(pady=(0, 10))
 
@@ -1391,7 +1417,11 @@ class AlohaCorpApp(tk.Tk):
             width=28,
             background='darkblue',
             foreground='white',
-            borderwidth=2
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
         )
         payroll_to_dropdown.pack(pady=(0, 10))
 
@@ -1622,7 +1652,7 @@ class AlohaCorpApp(tk.Tk):
         self.merch_value_entry.insert(0, "0.0")  # Example placeholder
         self.merch_value_entry.pack(pady=(0, 10))
 
-        # DATE field (dropdown or DateEntry)
+        # DATE field (DateEntry)
         date_label = tk.Label(
             self.main_frame,
             text="DATE",
@@ -1637,7 +1667,11 @@ class AlohaCorpApp(tk.Tk):
             width=28,
             background='darkblue',
             foreground='white',
-            borderwidth=2
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
         )
         self.merch_date_entry.pack(pady=(0, 20))
 
@@ -1772,7 +1806,11 @@ class AlohaCorpApp(tk.Tk):
             width=28,
             background='darkblue',
             foreground='white',
-            borderwidth=2
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
         )
         self.start_date.pack(pady=(0, 10))
 
@@ -1790,7 +1828,11 @@ class AlohaCorpApp(tk.Tk):
             width=28,
             background='darkblue',
             foreground='white',
-            borderwidth=2
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
         )
         self.end_date.pack(pady=(0, 20))
 
@@ -1883,7 +1925,11 @@ class AlohaCorpApp(tk.Tk):
             width=28,
             background='darkblue',
             foreground='white',
-            borderwidth=2
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
         )
         self.rates_date_entry.pack(pady=(0, 20))
 
