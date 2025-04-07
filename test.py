@@ -45,6 +45,7 @@ class AlohaCorpApp(tk.Tk):
                 self.create_withdrawals_table()
                 self.create_payroll_table()
                 self.create_day_closeout_table()
+                self.create_in_out_bal_table()
             else:
                 print("Connection failed")
         except Error as e:
@@ -114,6 +115,24 @@ class AlohaCorpApp(tk.Tk):
                 self.connection.commit()
             except Error as err:
                 print(f"Error creating expenses table: {err}")
+
+    def create_in_out_bal_table(self):
+        create_table_query = """
+                CREATE TABLE IF NOT EXISTS in_out_bal (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        emp_id INT,
+        in_bal DECIMAL(10,2),
+        out_bal DECIMAL(10,2),
+        clock_in TIME,
+        clock_out TIME
+    )
+                """
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(create_table_query)
+            self.connection.commit()
+        except Error as err:
+            print(f"Error creating expenses table: {err}")
 
     def create_merchandise_table(self):
             create_table_query = """
@@ -203,7 +222,7 @@ class AlohaCorpApp(tk.Tk):
             create_table_query = """
                 CREATE TABLE IF NOT EXISTS day_closeout (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    employee_username VARCHAR(255),
+    employee_id INT,
     cash DECIMAL(10,2),
     credit DECIMAL(10,2),
     total DECIMAL(10,2),
@@ -708,7 +727,7 @@ class AlohaCorpApp(tk.Tk):
         sub_label.pack(pady=(0, 20))
 
         # Employee Username
-        emp_label = tk.Label(self.main_frame, text="EMPLOYEE USERNAME", bg="white", fg="black", font=self.sub_font)
+        emp_label = tk.Label(self.main_frame, text="EMPLOYEE ID", bg="white", fg="black", font=self.sub_font)
         emp_label.pack(pady=(0, 2))
         self.dayclose_emp_entry = tk.Entry(self.main_frame, width=30)
         self.dayclose_emp_entry.pack(pady=(0, 10))
@@ -773,7 +792,7 @@ class AlohaCorpApp(tk.Tk):
         Retrieves the entered data, displays the values for confirmation,
         validates the input, and inserts the record into the day_closeout table.
         """
-        emp_username = self.dayclose_emp_entry.get()
+        emp_id = self.dayclose_emp_entry.get()
         cash = self.dayclose_cash_entry.get()
         credit = self.dayclose_credit_entry.get()
         total = self.dayclose_total_entry.get()
@@ -785,7 +804,7 @@ class AlohaCorpApp(tk.Tk):
         # Display the entered values for confirmation.
         messagebox.showinfo(
             "Day Closeout Submitted",
-            f"Employee: {emp_username}\n"
+            f"Employee: {emp_id}\n"
             f"Cash: {cash}\n"
             f"Credit: {credit}\n"
             f"Total: {total}\n"
@@ -799,8 +818,22 @@ class AlohaCorpApp(tk.Tk):
             messagebox.showwarning("Warning", "No database connection. This is a demo.")
             return
 
+        try:
+            cursor = self.connection.cursor()
+            query = "SELECT id FROM users WHERE id = %s"
+            cursor.execute(query, (emp_id))
+            result = cursor.fetchone()
+
+            if not result:
+                messagebox.showerror("Error", "Employee username not found.")
+                return
+
+        except Error as err:
+            messagebox.showerror("Database Error", "Error fetching employee ID")
+            return  # Ensure function exits on database error
+
         # Validate that all required fields are provided.
-        if not (emp_username and cash and credit and total and diff and date_val):
+        if not (emp_id and cash and credit and total and diff and date_val):
             messagebox.showerror("Error", "All fields are required.")
             return
 
@@ -808,10 +841,10 @@ class AlohaCorpApp(tk.Tk):
             cursor = self.connection.cursor()
             query = """
                 INSERT INTO day_closeout 
-                (employee_username, cash, credit, total, difference, date, notes) 
+                (employee_id, cash, credit, total, difference, date, notes) 
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(query, (emp_username, cash, credit, total, diff, date_val, notes))
+            cursor.execute(query, (emp_id, cash, credit, total, diff, date_val, notes))
             self.connection.commit()
             messagebox.showinfo("Success", "Day closeout data added")
             self.go_back()  # Return to the previous screen
@@ -843,7 +876,7 @@ class AlohaCorpApp(tk.Tk):
         sub_label.pack(pady=(0, 20))
 
         # Employee Username
-        emp_label = tk.Label(self.main_frame, text="EMPLOYEE USERNAME", bg="white", fg="black", font=self.sub_font)
+        emp_label = tk.Label(self.main_frame, text="EMPLOYEE ID", bg="white", fg="black", font=self.sub_font)
         emp_label.pack(pady=(0, 2))
         self.inout_emp_entry = tk.Entry(self.main_frame, width=30)
         self.inout_emp_entry.pack(pady=(0, 10))
@@ -900,7 +933,7 @@ class AlohaCorpApp(tk.Tk):
         """
         Just shows a message for now (no DB insert).
         """
-        emp_username = self.inout_emp_entry.get()
+        emp_id = self.inout_emp_entry.get()
         in_balance = self.in_balance_entry.get()
         out_balance = self.out_balance_entry.get()
         clock_in = self.clockin_entry.get()
@@ -909,7 +942,7 @@ class AlohaCorpApp(tk.Tk):
 
         messagebox.showinfo(
             "In/Out Balance",
-            f"Employee: {emp_username}\nIn Balance: {in_balance}\nOut Balance: {out_balance}\n"
+            f"Employee: {emp_id}\nIn Balance: {in_balance}\nOut Balance: {out_balance}\n"
             f"Clock-In: {clock_in}\nClock-Out: {clock_out}\nDate: {date_val}"
         )
 
@@ -2114,6 +2147,7 @@ class AlohaCorpApp(tk.Tk):
 
     def option1_action(self):
         # Clear any session-specific data if necessary here.
+        self.user_role = None
         self.show_welcome_screen()
         messagebox.showinfo("Sign Out", "You have been signed out successfully.")
 
