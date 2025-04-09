@@ -2202,7 +2202,7 @@ class AlohaCorpApp(tk.Tk):
             # Extract the bonus rate (ensure it's a float)
             rate = float(rate_result[0])
 
-            query = "SELECT in_bal, out_bal FROM in_out_bal WHERE emp_id = %s AND location = %s AND date > % AND date < %"
+            query = "SELECT in_bal, out_bal FROM in_out_bal WHERE emp_id = %s AND location = %s AND date > %s AND date < %s"
             emp_id = int(emp_id)
             cursor.execute(query, (emp_id, location, start_date_val, end_date_val))
             rows = cursor.fetchall()
@@ -2220,7 +2220,7 @@ class AlohaCorpApp(tk.Tk):
 
             print("Total balance difference:", total_diff)
 
-            bonus_amt = total_diff * rate
+            bonus_amt = float(total_diff) * float(rate)
 
             print("Calculated bonus amount:", bonus_amt)
 
