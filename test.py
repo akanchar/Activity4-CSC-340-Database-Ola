@@ -11,7 +11,7 @@ class AlohaCorpApp(tk.Tk):
         super().__init__()
 
         self.title("Aloha Corp")
-        self.geometry("500x300")
+        self.geometry("700x700")
         self.configure(bg="white")
 
         # Custom fonts for headings
@@ -933,16 +933,16 @@ class AlohaCorpApp(tk.Tk):
         self.inout_date_dropdown.pack(pady=(0, 10))
 
         # sign up (submit) button
-        signup_button = tk.Button(
+        submit_button = tk.Button(
             self.main_frame,
-            text="sign up",
+            text="Submit",
             bg="black",
             fg="white",
             width=20,
             height=2,
             command=self.process_in_out_balance
         )
-        signup_button.pack(pady=10)
+        submit_button.pack(pady=10)
 
     def process_in_out_balance(self):
         """
@@ -2179,7 +2179,7 @@ class AlohaCorpApp(tk.Tk):
         # Sign Up button
         signup_button = tk.Button(
             self.main_frame,
-            text="sign up",
+            text="Sign up",
             bg="black",
             fg="white",
             width=20,
