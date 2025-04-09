@@ -1,4 +1,5 @@
 import tkinter as tk
+import pandas as pd
 from tkinter import font as tkfont, ttk, messagebox
 import mysql.connector
 from mysql.connector import Error
@@ -127,7 +128,8 @@ class AlohaCorpApp(tk.Tk):
         out_bal DECIMAL(10,2),
         clock_in TIME,
         clock_out TIME,
-        date DATE
+        date DATE,
+        location VARCHAR(255)
     )
                 """
         try:
@@ -932,6 +934,28 @@ class AlohaCorpApp(tk.Tk):
         )
         self.inout_date_dropdown.pack(pady=(0, 10))
 
+        # Location (dropdown)
+        location_label = tk.Label(
+            self.main_frame,
+            text="LOCATION",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        location_label.pack(pady=(0, 2))
+        self.location_var = tk.StringVar()
+        # Example location list
+        locations = ["Select", "Store 1", "Store 2", "Store 3"]
+        self.location_var.set(locations[0])
+        location_dropdown = ttk.Combobox(
+            self.main_frame,
+            textvariable=self.location_var,
+            values=locations,
+            state="readonly",
+            width=28
+        )
+        location_dropdown.pack(pady=(0, 10))
+
         # sign up (submit) button
         submit_button = tk.Button(
             self.main_frame,
@@ -954,6 +978,7 @@ class AlohaCorpApp(tk.Tk):
         clock_in = self.clockin_entry.get()
         clock_out = self.clockout_entry.get()
         date_val = self.inout_date_dropdown.get()
+        location = self.location_var.get()
 
         messagebox.showinfo(
             "In/Out Balance",
@@ -981,7 +1006,7 @@ class AlohaCorpApp(tk.Tk):
             return  # Ensure function exits on database error
 
         # Validate that all required fields are provided.
-        if not (emp_id and in_balance and out_balance and clock_in and clock_out and date_val):
+        if not (emp_id and in_balance and out_balance and clock_in and clock_out and date_val and location):
             messagebox.showerror("Error", "All fields are required.")
             return
 
@@ -989,10 +1014,10 @@ class AlohaCorpApp(tk.Tk):
             cursor = self.connection.cursor()
             query = """
                         INSERT INTO in_out_bal 
-                        (emp_id, in_bal, out_bal, clock_in, clock_out, date) 
-                        VALUES (%s, %s, %s, %s, %s, %s)
+                        (emp_id, in_bal, out_bal, clock_in, clock_out, date, location) 
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
                     """
-            cursor.execute(query, (emp_id, in_balance, out_balance, clock_in, clock_out, date_val))
+            cursor.execute(query, (emp_id, in_balance, out_balance, clock_in, clock_out, date_val, location))
             self.connection.commit()
             messagebox.showinfo("Success", "Day closeout data added")
             self.go_back()  # Return to the previous screen
@@ -2053,7 +2078,7 @@ class AlohaCorpApp(tk.Tk):
         try:
             cursor = self.connection.cursor()
             query = "SELECT id FROM users WHERE id = %s"
-            cursor.execute(query, (emp_id))
+            cursor.execute(query, (emp_id,))
             result = cursor.fetchone()
 
             if not result:
@@ -2093,7 +2118,69 @@ class AlohaCorpApp(tk.Tk):
             f"End Date: {end_date_val}"
         )
 
-        # If you want to do more, e.g., database queries, you can do it here.
+        if not self.connection:
+            messagebox.showwarning("Warning", "No database connection. This is a demo.")
+            return
+
+        if not (location and emp_id and start_date_val and end_date_val):
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        try:
+            cursor = self.connection.cursor()
+            query = "SELECT id FROM users WHERE id = %s"
+            cursor.execute(query, (emp_id,))
+            result = cursor.fetchone()
+
+            if not result:
+                messagebox.showerror("Error", "Employee ID not found.")
+                return
+
+        except Error as err:
+            messagebox.showerror("Database Error", "Error fetching employee ID")
+            return  # Ensure function exits on database error
+
+        try:
+            cursor = self.connection.cursor()
+            query = "SELECT bonus_rate FROM employee_rates WHERE employee_id = %s AND location = %s"
+            cursor.execute(query, (emp_id, location))
+            rate_result = cursor.fetchone()
+
+            if not rate_result or not rate_result[0]:
+                messagebox.showerror("Error", "Bonus rate not found for this employee and location.")
+                return
+
+            # Extract the bonus rate (ensure it's a float)
+            rate = float(rate_result[0])
+
+            query = "SELECT in_bal, out_bal FROM in_out_bal WHERE emp_id = %s AND location = %s AND date > % AND date < %"
+            emp_id = int(emp_id)
+            print("Executing query:", query)
+            print("With parameters:", emp_id, location, start_date_val, end_date_val)
+            cursor.execute(query, (emp_id, location, start_date_val, end_date_val))
+            rows = cursor.fetchall()
+
+            print("Fetched rows:", rows)
+
+            if not rows:
+                messagebox.showerror("Error",
+                                     "No balance records found for this employee and location in the given date range.")
+                return
+
+            balances = pd.DataFrame(rows, columns=['in_bal', 'out_bal'])
+            balances['balance_diff'] = balances['out_bal'] - balances['in_bal']
+            total_diff = balances['balance_diff'].sum()
+
+            print("Total balance difference:", total_diff)
+
+            bonus_amt = total_diff * rate
+
+            print("Calculated bonus amount:", bonus_amt)
+
+            messagebox.showinfo("Success", f"Bonus amount: ${bonus_amt:.2f}")
+            self.go_back()  # Return to the previous screen
+        except Error as err:
+            messagebox.showerror("Database Error", "Bonus not calculated")
 
     # ----------------------------------------------------------------
     # ADD EMPLOYEE FORM
