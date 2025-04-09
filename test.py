@@ -1,5 +1,4 @@
 import tkinter as tk
-import pandas as pd
 from tkinter import font as tkfont, ttk, messagebox
 import mysql.connector
 from mysql.connector import Error
@@ -12,7 +11,7 @@ class AlohaCorpApp(tk.Tk):
         super().__init__()
 
         self.title("Aloha Corp")
-        self.geometry("700x700")
+        self.geometry("500x300")
         self.configure(bg="white")
 
         # Custom fonts for headings
@@ -33,7 +32,7 @@ class AlohaCorpApp(tk.Tk):
             self.connection = mysql.connector.connect(
                 host="localhost",    # or your host address
                 user="root",         # replace with your MySQL username
-                password="root",     # replace with your MySQL password
+                password="34691",     # replace with your MySQL password
                 database="triall"    # replace with your database name
             )
             if self.connection.is_connected():
@@ -126,9 +125,7 @@ class AlohaCorpApp(tk.Tk):
         in_bal DECIMAL(10,2),
         out_bal DECIMAL(10,2),
         clock_in TIME,
-        clock_out TIME,
-        date DATE,
-        location VARCHAR(255)
+        clock_out TIME
     )
                 """
         try:
@@ -253,6 +250,7 @@ class AlohaCorpApp(tk.Tk):
         self.connection.commit()
 
 
+
     def create_top_bar(self):
         top_bar = tk.Frame(self, bg="white", height=40)
         top_bar.pack(side="top", fill="x")
@@ -269,7 +267,7 @@ class AlohaCorpApp(tk.Tk):
         )
         back_button.pack(side="left", padx=10, pady=5)
 
-        # 3-dot menu button
+        # Menu button
         menu_button = tk.Menubutton(
             top_bar,
             text="⋮",
@@ -282,8 +280,55 @@ class AlohaCorpApp(tk.Tk):
 
         dot_menu = tk.Menu(menu_button, tearoff=0)
         dot_menu.add_command(label="Sign Out", command=self.option1_action)
-        dot_menu.add_command(label="Option 2", command=self.option2_action)
+        dot_menu.add_command(label="Dark Mode", command=self.toggle_dark_mode)  # <-- Add this!
         menu_button["menu"] = dot_menu
+
+    def toggle_dark_mode(self):
+        if hasattr(self, 'dark_mode') and self.dark_mode:
+            self.dark_mode = False
+            self.set_theme(light=True)
+        else:
+            self.dark_mode = True
+            self.set_theme(light=False)
+
+    def set_theme(self, light=True):
+        bg = "white" if light else "#1e1e1e"
+        fg = "black" if light else "#f5f5f5"
+        entry_bg = "white" if light else "#333333"
+        entry_fg = "black" if light else "#f5f5f5"
+        btn_bg = "black" if light else "#444444"
+        btn_fg = "white"
+        highlight_color = "#666" if not light else "#ccc"
+
+        self.configure(bg=bg)
+
+        def apply_theme(widget):
+            widget_type = widget.winfo_class()
+
+            if widget_type in ("Frame", "LabelFrame", "TFrame"):
+                widget.configure(bg=bg)
+            elif widget_type in ("Label", "Menubutton"):
+                widget.configure(bg=bg, fg=fg)
+            elif widget_type == "Button":
+                widget.configure(bg=btn_bg, fg=btn_fg)
+            elif widget_type in ("Entry", "TEntry"):
+                widget.configure(bg=entry_bg, fg=entry_fg, insertbackground=entry_fg)
+            elif widget_type == "TCombobox":
+                style = ttk.Style()
+                theme_style = "dark.TCombobox" if not light else "light.TCombobox"
+                style.theme_use("default")
+                style.configure(theme_style,
+                                fieldbackground=entry_bg,
+                                background=entry_bg,
+                                foreground=entry_fg)
+                widget.configure(style=theme_style)
+            elif widget_type == "Canvas":
+                widget.configure(bg=bg)
+
+            for child in widget.winfo_children():
+                apply_theme(child)
+
+        apply_theme(self)
 
     def clear_main_frame(self):
         for widget in self.main_frame.winfo_children():
@@ -830,11 +875,11 @@ class AlohaCorpApp(tk.Tk):
         try:
             cursor = self.connection.cursor()
             query = "SELECT id FROM users WHERE id = %s"
-            cursor.execute(query, (emp_id,))
+            cursor.execute(query, (emp_id))
             result = cursor.fetchone()
 
             if not result:
-                messagebox.showerror("Error", "Employee ID not found.")
+                messagebox.showerror("Error", "Employee username not found.")
                 return
 
         except Error as err:
@@ -956,30 +1001,8 @@ class AlohaCorpApp(tk.Tk):
         )
         self.inout_date_dropdown.pack(pady=(0, 10))
 
-        # Location (dropdown)
-        location_label = tk.Label(
-            self.main_frame,
-            text="LOCATION",
-            bg="white",
-            fg="black",
-            font=self.sub_font
-        )
-        location_label.pack(pady=(0, 2))
-        self.location_var = tk.StringVar()
-        # Example location list
-        locations = ["Select", "Store 1", "Store 2", "Store 3"]
-        self.location_var.set(locations[0])
-        location_dropdown = ttk.Combobox(
-            self.main_frame,
-            textvariable=self.location_var,
-            values=locations,
-            state="readonly",
-            width=28
-        )
-        location_dropdown.pack(pady=(0, 10))
-
         # sign up (submit) button
-        submit_button = tk.Button(
+        signup_button = tk.Button(
             self.main_frame,
             text="Submit",
             bg="black",
@@ -988,7 +1011,7 @@ class AlohaCorpApp(tk.Tk):
             height=2,
             command=self.process_in_out_balance
         )
-        submit_button.pack(pady=10)
+        signup_button.pack(pady=10)
 
     def process_in_out_balance(self):
         """
@@ -1000,7 +1023,6 @@ class AlohaCorpApp(tk.Tk):
         # clock_in = self.clockin_entry.get()
         # clock_out = self.clockout_entry.get()
         date_val = self.inout_date_dropdown.get()
-        location = self.location_var.get()
         clock_in_hour = self.clockin_hour_spin.get()
         clock_in_min = self.clockin_min_spin.get()
         clock_in = f"{clock_in_hour}:{clock_in_min}"
@@ -1030,27 +1052,9 @@ class AlohaCorpApp(tk.Tk):
                                  "Please enter valid numeric values for Employee ID, In Balance, and Out Balance.")
             return
 
+        # Ensure that we have a valid database connection.
         if not self.connection:
             messagebox.showwarning("Warning", "No database connection. This is a demo.")
-            return
-
-        try:
-            cursor = self.connection.cursor()
-            query = "SELECT id FROM users WHERE id = %s"
-            cursor.execute(query, (emp_id,))
-            result = cursor.fetchone()
-
-            if not result:
-                messagebox.showerror("Error", "Employee ID not found.")
-                return
-
-        except Error as err:
-            messagebox.showerror("Database Error", "Error fetching employee ID")
-            return  # Ensure function exits on database error
-
-        # Validate that all required fields are provided.
-        if not (emp_id and in_balance and out_balance and clock_in and clock_out and date_val and location):
-            messagebox.showerror("Error", "All fields are required.")
             return
 
         # Insert the record into the database.
@@ -1061,12 +1065,6 @@ class AlohaCorpApp(tk.Tk):
                    VALUES (%s, %s, %s, %s, %s)
                """
             cursor.execute(insert_query, (emp_id_val, in_balance_val, out_balance_val, clock_in, clock_out))
-            query = """
-                        INSERT INTO in_out_bal 
-                        (emp_id, in_bal, out_bal, clock_in, clock_out, date, location) 
-                        VALUES (%s, %s, %s, %s, %s, %s, %s)
-                    """
-            cursor.execute(query, (emp_id, in_balance, out_balance, clock_in, clock_out, date_val, location))
             self.connection.commit()
             messagebox.showinfo("Success", "In/Out balance record inserted successfully.")
             self.go_back()  # Optionally, navigate back to the previous screen.
@@ -2127,7 +2125,7 @@ class AlohaCorpApp(tk.Tk):
         try:
             cursor = self.connection.cursor()
             query = "SELECT id FROM users WHERE id = %s"
-            cursor.execute(query, (emp_id,))
+            cursor.execute(query, (emp_id))
             result = cursor.fetchone()
 
             if not result:
@@ -2167,67 +2165,7 @@ class AlohaCorpApp(tk.Tk):
             f"End Date: {end_date_val}"
         )
 
-        if not self.connection:
-            messagebox.showwarning("Warning", "No database connection. This is a demo.")
-            return
-
-        if not (location and emp_id and start_date_val and end_date_val):
-            messagebox.showerror("Error", "All fields are required.")
-            return
-
-        try:
-            cursor = self.connection.cursor()
-            query = "SELECT id FROM users WHERE id = %s"
-            cursor.execute(query, (emp_id,))
-            result = cursor.fetchone()
-
-            if not result:
-                messagebox.showerror("Error", "Employee ID not found.")
-                return
-
-        except Error as err:
-            messagebox.showerror("Database Error", "Error fetching employee ID")
-            return  # Ensure function exits on database error
-
-        try:
-            cursor = self.connection.cursor()
-            query = "SELECT bonus_rate FROM employee_rates WHERE employee_id = %s AND location = %s"
-            cursor.execute(query, (emp_id, location))
-            rate_result = cursor.fetchone()
-
-            if not rate_result or not rate_result[0]:
-                messagebox.showerror("Error", "Bonus rate not found for this employee and location.")
-                return
-
-            # Extract the bonus rate (ensure it's a float)
-            rate = float(rate_result[0])
-
-            query = "SELECT in_bal, out_bal FROM in_out_bal WHERE emp_id = %s AND location = %s AND date > %s AND date < %s"
-            emp_id = int(emp_id)
-            cursor.execute(query, (emp_id, location, start_date_val, end_date_val))
-            rows = cursor.fetchall()
-
-            print("Fetched rows:", rows)
-
-            if not rows:
-                messagebox.showerror("Error",
-                                     "No balance records found for this employee and location in the given date range.")
-                return
-
-            balances = pd.DataFrame(rows, columns=['in_bal', 'out_bal'])
-            balances['balance_diff'] = balances['out_bal'] - balances['in_bal']
-            total_diff = balances['balance_diff'].sum()
-
-            print("Total balance difference:", total_diff)
-
-            bonus_amt = float(total_diff) * float(rate)
-
-            print("Calculated bonus amount:", bonus_amt)
-
-            messagebox.showinfo("Success", f"Bonus amount: ${bonus_amt:.2f}")
-            self.go_back()  # Return to the previous screen
-        except Error as err:
-            messagebox.showerror("Database Error", "Bonus not calculated")
+        # If you want to do more, e.g., database queries, you can do it here.
 
     # ----------------------------------------------------------------
     # ADD EMPLOYEE FORM
@@ -2313,7 +2251,7 @@ class AlohaCorpApp(tk.Tk):
         # Sign Up button
         signup_button = tk.Button(
             self.main_frame,
-            text="Sign up",
+            text="sign up",
             bg="black",
             fg="white",
             width=20,
