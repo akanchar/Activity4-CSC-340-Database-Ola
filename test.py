@@ -47,6 +47,7 @@ class AlohaCorpApp(tk.Tk):
                 self.create_payroll_table()
                 self.create_day_closeout_table()
                 self.create_in_out_bal_table()
+                print("created all tables")
             else:
                 print("Connection failed")
         except Error as e:
@@ -125,15 +126,19 @@ class AlohaCorpApp(tk.Tk):
         in_bal DECIMAL(10,2),
         out_bal DECIMAL(10,2),
         clock_in TIME,
-        clock_out TIME
+        clock_out TIME,
+        date DATE
     )
                 """
         try:
             cursor = self.connection.cursor()
             cursor.execute(create_table_query)
             self.connection.commit()
+            cursor.execute("SHOW TABLES")
+            tables = cursor.fetchall()
+            print("Tables in DB:", tables)
         except Error as err:
-            print(f"Error creating expenses table: {err}")
+            print(f"Error creating in_out_bal table: {err}")
 
     def create_merchandise_table(self):
             create_table_query = """
@@ -827,11 +832,11 @@ class AlohaCorpApp(tk.Tk):
         try:
             cursor = self.connection.cursor()
             query = "SELECT id FROM users WHERE id = %s"
-            cursor.execute(query, (emp_id))
+            cursor.execute(query, (emp_id,))
             result = cursor.fetchone()
 
             if not result:
-                messagebox.showerror("Error", "Employee username not found.")
+                messagebox.showerror("Error", "Employee ID not found.")
                 return
 
         except Error as err:
@@ -914,7 +919,7 @@ class AlohaCorpApp(tk.Tk):
         # Date (dropdown)
         date_label = tk.Label(self.main_frame, text="DATE", bg="white", fg="black", font=self.sub_font)
         date_label.pack(pady=(0, 2))
-        inout_date_dropdown = DateEntry(
+        self.inout_date_dropdown = DateEntry(
             self.main_frame,
             width=28,
             background='darkblue',
@@ -925,7 +930,7 @@ class AlohaCorpApp(tk.Tk):
             month=datetime.now().month,
             day=datetime.now().day
         )
-        inout_date_dropdown.pack(pady=(0, 10))
+        self.inout_date_dropdown.pack(pady=(0, 10))
 
         # sign up (submit) button
         signup_button = tk.Button(
@@ -948,13 +953,51 @@ class AlohaCorpApp(tk.Tk):
         out_balance = self.out_balance_entry.get()
         clock_in = self.clockin_entry.get()
         clock_out = self.clockout_entry.get()
-        date_val = self.inout_date_var.get()
+        date_val = self.inout_date_dropdown.get()
 
         messagebox.showinfo(
             "In/Out Balance",
             f"Employee: {emp_id}\nIn Balance: {in_balance}\nOut Balance: {out_balance}\n"
             f"Clock-In: {clock_in}\nClock-Out: {clock_out}\nDate: {date_val}"
         )
+
+        # Check for a valid database connection.
+        if not self.connection:
+            messagebox.showwarning("Warning", "No database connection. This is a demo.")
+            return
+
+        try:
+            cursor = self.connection.cursor()
+            query = "SELECT id FROM users WHERE id = %s"
+            cursor.execute(query, (emp_id,))
+            result = cursor.fetchone()
+
+            if not result:
+                messagebox.showerror("Error", "Employee ID not found.")
+                return
+
+        except Error as err:
+            messagebox.showerror("Database Error", "Error fetching employee ID")
+            return  # Ensure function exits on database error
+
+        # Validate that all required fields are provided.
+        if not (emp_id and in_balance and out_balance and clock_in and clock_out and date_val):
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        try:
+            cursor = self.connection.cursor()
+            query = """
+                        INSERT INTO in_out_bal 
+                        (emp_id, in_bal, out_bal, clock_in, clock_out, date) 
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """
+            cursor.execute(query, (emp_id, in_balance, out_balance, clock_in, clock_out, date_val))
+            self.connection.commit()
+            messagebox.showinfo("Success", "Day closeout data added")
+            self.go_back()  # Return to the previous screen
+        except Error as err:
+            messagebox.showerror("Database Error", "Day closeout data not added")
 
     def show_expense_form(self):
         """
