@@ -11,7 +11,7 @@ class AlohaCorpApp(tk.Tk):
         super().__init__()
 
         self.title("Aloha Corp")
-        self.geometry("700x700")
+        self.geometry("500x300")
         self.configure(bg="white")
 
         # Custom fonts for headings
@@ -47,7 +47,6 @@ class AlohaCorpApp(tk.Tk):
                 self.create_payroll_table()
                 self.create_day_closeout_table()
                 self.create_in_out_bal_table()
-                print("created all tables")
             else:
                 print("Connection failed")
         except Error as e:
@@ -126,19 +125,15 @@ class AlohaCorpApp(tk.Tk):
         in_bal DECIMAL(10,2),
         out_bal DECIMAL(10,2),
         clock_in TIME,
-        clock_out TIME,
-        date DATE
+        clock_out TIME
     )
                 """
         try:
             cursor = self.connection.cursor()
             cursor.execute(create_table_query)
             self.connection.commit()
-            cursor.execute("SHOW TABLES")
-            tables = cursor.fetchall()
-            print("Tables in DB:", tables)
         except Error as err:
-            print(f"Error creating in_out_bal table: {err}")
+            print(f"Error creating expenses table: {err}")
 
     def create_merchandise_table(self):
             create_table_query = """
@@ -832,11 +827,11 @@ class AlohaCorpApp(tk.Tk):
         try:
             cursor = self.connection.cursor()
             query = "SELECT id FROM users WHERE id = %s"
-            cursor.execute(query, (emp_id,))
+            cursor.execute(query, (emp_id))
             result = cursor.fetchone()
 
             if not result:
-                messagebox.showerror("Error", "Employee ID not found.")
+                messagebox.showerror("Error", "Employee username not found.")
                 return
 
         except Error as err:
@@ -904,17 +899,43 @@ class AlohaCorpApp(tk.Tk):
         self.out_balance_entry = tk.Entry(self.main_frame, width=30)
         self.out_balance_entry.pack(pady=(0, 10))
 
+
         # Clock-In Time
-        cin_label = tk.Label(self.main_frame, text="CLOCK-IN TIME", bg="white", fg="black", font=self.sub_font)
+        cin_label = tk.Label(self.main_frame, text="CLOCK-IN TIME (HH:MM)", bg="white", fg="black", font=self.sub_font)
         cin_label.pack(pady=(0, 2))
-        self.clockin_entry = tk.Entry(self.main_frame, width=30)
-        self.clockin_entry.pack(pady=(0, 10))
+
+        clockin_frame = tk.Frame(self.main_frame, bg="white")
+        clockin_frame.pack(pady=(0, 10))
+
+        # Spinbox for hours (00 to 23)
+        self.clockin_hour_spin = tk.Spinbox(clockin_frame, from_=0, to=23, width=3, format="%02.0f")
+        self.clockin_hour_spin.pack(side=tk.LEFT)
+
+        # Colon separator
+        tk.Label(clockin_frame, text=":", bg="white", fg="black", font=self.sub_font).pack(side=tk.LEFT)
+
+        # Spinbox for minutes (00 to 59)
+        self.clockin_min_spin = tk.Spinbox(clockin_frame, from_=0, to=59, width=3, format="%02.0f")
+        self.clockin_min_spin.pack(side=tk.LEFT)
 
         # Clock-Out Time
-        cout_label = tk.Label(self.main_frame, text="CLOCK-OUT TIME", bg="white", fg="black", font=self.sub_font)
+        cout_label = tk.Label(self.main_frame, text="CLOCK-OUT TIME (HH:MM)", bg="white", fg="black",
+                              font=self.sub_font)
         cout_label.pack(pady=(0, 2))
-        self.clockout_entry = tk.Entry(self.main_frame, width=30)
-        self.clockout_entry.pack(pady=(0, 10))
+
+        clockout_frame = tk.Frame(self.main_frame, bg="white")
+        clockout_frame.pack(pady=(0, 10))
+
+        # Spinbox for hours (00 to 23)
+        self.clockout_hour_spin = tk.Spinbox(clockout_frame, from_=0, to=23, width=3, format="%02.0f")
+        self.clockout_hour_spin.pack(side=tk.LEFT)
+
+        # Colon separator
+        tk.Label(clockout_frame, text=":", bg="white", fg="black", font=self.sub_font).pack(side=tk.LEFT)
+
+        # Spinbox for minutes (00 to 59)
+        self.clockout_min_spin = tk.Spinbox(clockout_frame, from_=0, to=59, width=3, format="%02.0f")
+        self.clockout_min_spin.pack(side=tk.LEFT)
 
         # Date (dropdown)
         date_label = tk.Label(self.main_frame, text="DATE", bg="white", fg="black", font=self.sub_font)
@@ -933,7 +954,7 @@ class AlohaCorpApp(tk.Tk):
         self.inout_date_dropdown.pack(pady=(0, 10))
 
         # sign up (submit) button
-        submit_button = tk.Button(
+        signup_button = tk.Button(
             self.main_frame,
             text="Submit",
             bg="black",
@@ -942,7 +963,7 @@ class AlohaCorpApp(tk.Tk):
             height=2,
             command=self.process_in_out_balance
         )
-        submit_button.pack(pady=10)
+        signup_button.pack(pady=10)
 
     def process_in_out_balance(self):
         """
@@ -951,9 +972,16 @@ class AlohaCorpApp(tk.Tk):
         emp_id = self.inout_emp_entry.get()
         in_balance = self.in_balance_entry.get()
         out_balance = self.out_balance_entry.get()
-        clock_in = self.clockin_entry.get()
-        clock_out = self.clockout_entry.get()
+        # clock_in = self.clockin_entry.get()
+        # clock_out = self.clockout_entry.get()
         date_val = self.inout_date_dropdown.get()
+        clock_in_hour = self.clockin_hour_spin.get()
+        clock_in_min = self.clockin_min_spin.get()
+        clock_in = f"{clock_in_hour}:{clock_in_min}"
+
+        clock_out_hour = self.clockout_hour_spin.get()
+        clock_out_min = self.clockout_min_spin.get()
+        clock_out = f"{clock_out_hour}:{clock_out_min}"
 
         messagebox.showinfo(
             "In/Out Balance",
@@ -961,43 +989,39 @@ class AlohaCorpApp(tk.Tk):
             f"Clock-In: {clock_in}\nClock-Out: {clock_out}\nDate: {date_val}"
         )
 
-        # Check for a valid database connection.
+
+        if not (emp_id and in_balance and out_balance and clock_in and clock_out):
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        # Convert numeric fields: emp_id should be an integer, balances should be floats.
+        try:
+            emp_id_val = int(emp_id)
+            in_balance_val = float(in_balance)
+            out_balance_val = float(out_balance)
+        except ValueError:
+            messagebox.showerror("Error",
+                                 "Please enter valid numeric values for Employee ID, In Balance, and Out Balance.")
+            return
+
+        # Ensure that we have a valid database connection.
         if not self.connection:
             messagebox.showwarning("Warning", "No database connection. This is a demo.")
             return
 
+        # Insert the record into the database.
         try:
             cursor = self.connection.cursor()
-            query = "SELECT id FROM users WHERE id = %s"
-            cursor.execute(query, (emp_id,))
-            result = cursor.fetchone()
-
-            if not result:
-                messagebox.showerror("Error", "Employee ID not found.")
-                return
-
-        except Error as err:
-            messagebox.showerror("Database Error", "Error fetching employee ID")
-            return  # Ensure function exits on database error
-
-        # Validate that all required fields are provided.
-        if not (emp_id and in_balance and out_balance and clock_in and clock_out and date_val):
-            messagebox.showerror("Error", "All fields are required.")
-            return
-
-        try:
-            cursor = self.connection.cursor()
-            query = """
-                        INSERT INTO in_out_bal 
-                        (emp_id, in_bal, out_bal, clock_in, clock_out, date) 
-                        VALUES (%s, %s, %s, %s, %s, %s)
-                    """
-            cursor.execute(query, (emp_id, in_balance, out_balance, clock_in, clock_out, date_val))
+            insert_query = """
+                   INSERT INTO in_out_bal (emp_id, in_bal, out_bal, clock_in, clock_out)
+                   VALUES (%s, %s, %s, %s, %s)
+               """
+            cursor.execute(insert_query, (emp_id_val, in_balance_val, out_balance_val, clock_in, clock_out))
             self.connection.commit()
-            messagebox.showinfo("Success", "Day closeout data added")
-            self.go_back()  # Return to the previous screen
-        except Error as err:
-            messagebox.showerror("Database Error", "Day closeout data not added")
+            messagebox.showinfo("Success", "In/Out balance record inserted successfully.")
+            self.go_back()  # Optionally, navigate back to the previous screen.
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to insert record: {e}")
 
     def show_expense_form(self):
         """
@@ -1035,7 +1059,7 @@ class AlohaCorpApp(tk.Tk):
         self.expense_value_entry = tk.Entry(self.main_frame, width=30)
         self.expense_value_entry.pack(pady=(0, 10))
 
-        # Date (dropdown)
+        # Date (calendar)
         date_label = tk.Label(self.main_frame, text="DATE", bg="white", fg="black", font=self.sub_font)
         date_label.pack(pady=(0, 2))
         self.expense_date_var = DateEntry(
@@ -2179,7 +2203,7 @@ class AlohaCorpApp(tk.Tk):
         # Sign Up button
         signup_button = tk.Button(
             self.main_frame,
-            text="Sign up",
+            text="sign up",
             bg="black",
             fg="white",
             width=20,
