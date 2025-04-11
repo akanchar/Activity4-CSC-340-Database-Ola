@@ -34,7 +34,7 @@ class AlohaCorpApp(tk.Tk):
             self.connection = mysql.connector.connect(
                 host="localhost",    # or your host address
                 user="root",         # replace with your MySQL username
-                password="root",     # replace with your MySQL password
+                password="34691",     # replace with your MySQL password
                 database="triall"    # replace with your database name
             )
             if self.connection.is_connected():
@@ -265,7 +265,6 @@ class AlohaCorpApp(tk.Tk):
         cursor.execute(insert_query, (123, 'andrew', hashed_pass1, 'Owner'))
         self.connection.commit()
 
-
     def create_top_bar(self):
         top_bar = tk.Frame(self, bg="white", height=40)
         top_bar.pack(side="top", fill="x")
@@ -296,7 +295,74 @@ class AlohaCorpApp(tk.Tk):
         dot_menu = tk.Menu(menu_button, tearoff=0)
         dot_menu.add_command(label="Sign Out", command=self.option1_action)
         dot_menu.add_command(label="Dark Mode", command=self.toggle_dark_mode)
+
+        # 1) Add our new 'Change Password' menu item
+        dot_menu.add_command(label="Change Password", command=self.show_change_password_form)
+
         menu_button["menu"] = dot_menu
+
+    def show_change_password_form(self):
+        """
+        Displays a form for changing the current user's password.
+        """
+        self.clear_main_frame()
+
+        heading_label = tk.Label(
+            self.main_frame,
+            text="Change Password",
+            bg="white",
+            fg="black",
+            font=self.header_font
+        )
+        heading_label.pack(pady=(20, 5))
+
+        # Old Password
+        old_pass_label = tk.Label(
+            self.main_frame,
+            text="Old Password:",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        old_pass_label.pack(pady=(5, 2))
+        self.old_password_entry = tk.Entry(self.main_frame, show="*", width=30)
+        self.old_password_entry.pack(pady=(0, 10))
+
+        # New Password
+        new_pass_label = tk.Label(
+            self.main_frame,
+            text="New Password:",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        new_pass_label.pack(pady=(5, 2))
+        self.new_password_entry = tk.Entry(self.main_frame, show="*", width=30)
+        self.new_password_entry.pack(pady=(0, 10))
+
+        # Confirm New Password
+        confirm_pass_label = tk.Label(
+            self.main_frame,
+            text="Confirm New Password:",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        confirm_pass_label.pack(pady=(5, 2))
+        self.confirm_password_entry = tk.Entry(self.main_frame, show="*", width=30)
+        self.confirm_password_entry.pack(pady=(0, 20))
+
+        # Submit button
+        submit_button = tk.Button(
+            self.main_frame,
+            text="Submit",
+            bg="black",
+            fg="white",
+            width=20,
+            height=2,
+            command=self.process_change_password
+        )
+        submit_button.pack(pady=10)
 
     def toggle_dark_mode(self):
         if hasattr(self, 'dark_mode') and self.dark_mode:
@@ -503,9 +569,9 @@ class AlohaCorpApp(tk.Tk):
     def process_login(self):
         """
         Logs in a user (e.g., employees, managers, owners).
-        If the user has a 'Manager' or 'Owner' role, we can direct them
+        If the user has a 'Manager' or 'Owner' role, we direct them
         to the manager/owner home screens after verifying the password.
-        If 'Employee', show employee home screen.
+        If 'Employee', show the employee home screen.
         """
         username = self.username_entry.get()
         password = self.password_entry.get()
@@ -525,12 +591,16 @@ class AlohaCorpApp(tk.Tk):
                 return
 
             user_id, stored_password, role = result
-
             self.user_role = role
 
-            # Verify the password using bcrypt.
+            # Verify the password using bcrypt
             if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
+                # 1) Store the current user's ID for future reference
+                self.logged_in_user_id = user_id
+
                 messagebox.showinfo("Success", f"Welcome, {username}!")
+
+                # 2) Navigate to the appropriate home screen
                 if role == "Manager":
                     self.show_manager_home()
                 elif role == "Owner":
@@ -544,6 +614,62 @@ class AlohaCorpApp(tk.Tk):
                 messagebox.showerror("Login Error", "Incorrect password.")
         except Error as err:
             messagebox.showerror("Database Error", f"Error during login: {err}")
+
+    def process_change_password(self):
+        # Step 1: Retrieve form data
+        old_pass = self.old_password_entry.get()
+        new_pass = self.new_password_entry.get()
+        confirm_pass = self.confirm_password_entry.get()
+
+        if not (old_pass and new_pass and confirm_pass):
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        if not hasattr(self, 'logged_in_user_id'):
+            messagebox.showerror("Error", "No user is currently logged in. Cannot change password.")
+            return
+
+        user_id = self.logged_in_user_id
+
+        # Step 2: Check old password
+        try:
+            cursor = self.connection.cursor()
+            query = "SELECT password FROM users WHERE id = %s"
+            cursor.execute(query, (user_id,))
+            result = cursor.fetchone()
+            if not result:
+                messagebox.showerror("Error", "User record not found.")
+                return
+
+            db_hashed_password = result[0]
+
+            # verify old password
+            if not bcrypt.checkpw(old_pass.encode('utf-8'), db_hashed_password.encode('utf-8')):
+                messagebox.showerror("Error", "Old password is incorrect.")
+                return
+
+        except Error as err:
+            messagebox.showerror("Database Error", f"Error fetching current password: {err}")
+            return
+
+        # Step 3: Validate new password match
+        if new_pass != confirm_pass:
+            messagebox.showerror("Error", "New password and confirmation do not match.")
+            return
+
+        # Step 4: Update DB with new hashed password
+        try:
+            hashed_new_pass = bcrypt.hashpw(new_pass.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+            update_query = "UPDATE users SET password = %s WHERE id = %s"
+            cursor.execute(update_query, (hashed_new_pass, user_id))
+            self.connection.commit()
+
+            messagebox.showinfo("Success", "Password changed successfully!")
+            self.go_back()  # Return to the appropriate screen
+
+        except Error as err:
+            messagebox.showerror("Database Error", f"Could not update password: {err}")
 
     # ----------------------------------------------------------------
     # CREATE ACCOUNT FLOW (Manager/Owner login only)
