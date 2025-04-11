@@ -282,8 +282,55 @@ class AlohaCorpApp(tk.Tk):
 
         dot_menu = tk.Menu(menu_button, tearoff=0)
         dot_menu.add_command(label="Sign Out", command=self.option1_action)
-        dot_menu.add_command(label="Option 2", command=self.option2_action)
+        dot_menu.add_command(label="Dark Mode", command=self.toggle_dark_mode)
         menu_button["menu"] = dot_menu
+
+    def toggle_dark_mode(self):
+        if hasattr(self, 'dark_mode') and self.dark_mode:
+            self.dark_mode = False
+            self.set_theme(light=True)
+        else:
+            self.dark_mode = True
+            self.set_theme(light=False)
+
+    def set_theme(self, light=True):
+        bg = "white" if light else "#1e1e1e"
+        fg = "black" if light else "#f5f5f5"
+        entry_bg = "white" if light else "#333333"
+        entry_fg = "black" if light else "#f5f5f5"
+        btn_bg = "black" if light else "#444444"
+        btn_fg = "white"
+        highlight_color = "#666" if not light else "#ccc"
+
+        self.configure(bg=bg)
+
+        def apply_theme(widget):
+            widget_type = widget.winfo_class()
+
+            if widget_type in ("Frame", "LabelFrame", "TFrame"):
+                widget.configure(bg=bg)
+            elif widget_type in ("Label", "Menubutton"):
+                widget.configure(bg=bg, fg=fg)
+            elif widget_type == "Button":
+                widget.configure(bg=btn_bg, fg=btn_fg)
+            elif widget_type in ("Entry", "TEntry"):
+                widget.configure(bg=entry_bg, fg=entry_fg, insertbackground=entry_fg)
+            elif widget_type == "TCombobox":
+                style = ttk.Style()
+                theme_style = "dark.TCombobox" if not light else "light.TCombobox"
+                style.theme_use("default")
+                style.configure(theme_style,
+                                fieldbackground=entry_bg,
+                                background=entry_bg,
+                                foreground=entry_fg)
+                widget.configure(style=theme_style)
+            elif widget_type == "Canvas":
+                widget.configure(bg=bg)
+
+            for child in widget.winfo_children():
+                apply_theme(child)
+
+        apply_theme(self)
 
     def clear_main_frame(self):
         for widget in self.main_frame.winfo_children():
