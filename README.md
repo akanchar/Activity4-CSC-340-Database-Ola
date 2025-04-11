@@ -48,7 +48,6 @@ The Aloha Corp application provides a unified interface for day-to-day operation
 Installation Instructions
 
 Clone the repository:
-git clone https://github.com/your-username/aloha-corp-app.git
 cd aloha-corp-app
 
 Setup MySQL Database with your own Username and Password:
