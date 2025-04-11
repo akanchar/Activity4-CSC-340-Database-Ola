@@ -26,6 +26,7 @@ class AlohaCorpApp(tk.Tk):
         self.selected_store = None
         self.selected_role = None
 
+
         # ----------------------------------------------------------------
         # DATABASE CONNECTION & TABLE CREATION
         # ----------------------------------------------------------------
@@ -62,7 +63,14 @@ class AlohaCorpApp(tk.Tk):
 
         # Main content area
         self.main_frame = tk.Frame(self, bg="white")
-        self.main_frame.pack(expand=True, fill="both")
+        self.main_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.page_frame = tk.Frame(self)  # Frame for records (Treeview) to show up
+        self.page_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Initially hide Treeview until data is fetched
+        self.tree = ttk.Treeview(self.page_frame, show='headings')
+        self.tree.pack_forget()  # Keep it hidden initially
 
         # Show the welcome screen
         self.show_welcome_screen()
@@ -92,6 +100,7 @@ class AlohaCorpApp(tk.Tk):
     company VARCHAR(255),
     invoice_number VARCHAR(50),
     amount DECIMAL(10,2),
+    location VARCHAR(255),
     date_due DATE
 )
         """
@@ -108,6 +117,7 @@ class AlohaCorpApp(tk.Tk):
     id INT AUTO_INCREMENT PRIMARY KEY,
     expense_type VARCHAR(255),
     expense_value DECIMAL(10,2),
+    location VARCHAR(255),
     date DATE
 )
             """
@@ -144,6 +154,7 @@ class AlohaCorpApp(tk.Tk):
     id INT AUTO_INCREMENT PRIMARY KEY,
     merchandise_type VARCHAR(255),
     merchandise_value DECIMAL(10,2),
+    location VARCHAR(255),
     date DATE
 )
             """
@@ -160,6 +171,7 @@ class AlohaCorpApp(tk.Tk):
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255),
     user_id INT,
+    location VARCHAR(255),
     amount DECIMAL(10,2)
 )
             """
@@ -232,6 +244,7 @@ class AlohaCorpApp(tk.Tk):
     total DECIMAL(10,2),
     difference DECIMAL(10,2),
     date DATE,
+    location VARCHAR(255),
     notes TEXT
 )
                 """
@@ -1385,11 +1398,157 @@ class AlohaCorpApp(tk.Tk):
             self.show_withdraw_form()
         elif option == "Payroll":
             self.show_payroll_form()
+        elif option == "View Records":
+            self.show_records_form()
         else:
             messagebox.showinfo("Owner Action", f"You clicked: {option}")
 
     def submit_owner_actions(self):
         messagebox.showinfo("Submit", "Owner actions submitted (placeholder).")
+
+    def show_records_form(self):
+        self.clear_main_frame()
+
+        heading_label = tk.Label(
+            self.main_frame,
+            text="View Records",
+            bg="white",
+            fg="black",
+            font=self.header_font
+        )
+        heading_label.pack(pady=(20, 5))
+
+        # Subheading
+        sub_label = tk.Label(
+            self.main_frame,
+            text="Select Records to View",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        sub_label.pack(pady=(0, 20))
+
+        # Location (dropdown)
+        location_label = tk.Label(
+            self.main_frame,
+            text="LOCATION",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        location_label.pack(pady=(0, 2))
+        self.location_var = tk.StringVar()
+        # Example location list
+        locations = ["Select", "Store 1", "Store 2", "Store 3"]
+        self.location_var.set(locations[0])
+        location_dropdown = ttk.Combobox(
+            self.main_frame,
+            textvariable=self.location_var,
+            values=locations,
+            state="readonly",
+            width=28
+        )
+        location_dropdown.pack(pady=(0, 10))
+
+        # Record Type
+        record_label = tk.Label(
+            self.main_frame,
+            text="RECORD TYPE",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        record_label.pack(pady=(0, 2))
+        self.record_var = tk.StringVar()
+        # Example records list
+        records = ["Select", "Invoices", "Expenses", "Merchandise", "Bonuses", "Day Closeouts", "In/Out Balances"]
+        self.record_var.set(records[0])
+        records_dropdown = ttk.Combobox(
+            self.main_frame,
+            textvariable=self.record_var,
+            values=records,
+            state="readonly",
+            width=28
+        )
+        records_dropdown.pack(pady=(0, 10))
+
+        # Submit button – same style as in Add Employee form.
+        submit_button = tk.Button(
+            self.main_frame,
+            text="Submit",
+            bg="black",
+            fg="white",
+            width=20,
+            height=2,
+            command=self.process_records
+        )
+        submit_button.pack(pady=10)
+
+        # Create the Treeview widget once
+        self.tree = ttk.Treeview(self.page_frame, show='headings')
+        self.tree.pack(fill=tk.BOTH, expand=True)
+        self.tree.pack_forget()  # Hide it initially
+
+    def process_records(self):
+
+        self.tree = ttk.Treeview(self.page_frame, show='headings')
+        self.tree.pack(fill=tk.BOTH, expand=True)
+
+        location = self.location_var.get()
+        record = self.record_var.get()
+
+        if not self.connection:
+            messagebox.showwarning("Warning", "No database connection. This is a demo.")
+            return
+
+        if not (location and record):
+            messagebox.showerror("Error", "All fields are required.")
+            return
+
+        if record == "Invoices":
+            rec_type = "invoices"
+        elif record == "Expenses":
+            rec_type = "expenses"
+        elif record == "Merchandise":
+            rec_type = "merchandise"
+        elif record == "Bonuses":
+            rec_type = "employee_bonus"
+        elif record == "Day Closeouts":
+            rec_type = "day_closeout"
+        elif record == "In/Out Balances":
+            rec_type = "in_out_bal"
+
+        try:
+            cursor = self.connection.cursor()
+            query = f"SELECT * FROM {rec_type} WHERE location = %s"
+            cursor.execute(query, (location,))
+            rows = cursor.fetchall()
+
+            print(f"Fetched rows: {rows}")
+
+            if not rows:
+                messagebox.showerror("Error",
+                                     "No balance records found.")
+                return
+
+            col_names = [desc[0] for desc in cursor.description]
+
+            # Update Treeview
+            self.tree["columns"] = col_names
+            self.tree.delete(*self.tree.get_children())
+
+            for col in col_names:
+                self.tree.heading(col, text=col)
+                self.tree.column(col, width=100)
+
+            for row in rows:
+                self.tree.insert("", tk.END, values=row)
+
+            self.tree.pack(fill=tk.BOTH, expand=True)
+
+        except Error as err:
+            messagebox.showerror("Database Error", "Records not found")
+
 
     def show_invoice_form(self):
         self.clear_main_frame()
