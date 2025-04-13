@@ -493,7 +493,7 @@ class AlohaCorpApp(tk.Tk):
         sub_label.pack(pady=(0, 10))
 
         # Displaying store selection (not used in DB queries here)
-        stores = ["Store 1", "Store 2", "Store 3", "Full Access"]
+        stores = ["Store 1", "Store 2", "Store 3"]
         self.store_var = tk.StringVar()
         self.store_var.set(stores[0])
         store_dropdown = ttk.Combobox(
@@ -994,6 +994,7 @@ class AlohaCorpApp(tk.Tk):
         diff = self.dayclose_diff_entry.get()
         # Retrieve the date from the DateEntry widget; ensure it's stored as an instance variable.
         date_val = self.dayclose_date_dropdown.get()
+        location = self.selected_store
         notes = self.dayclose_notes_entry.get()
 
         # Display the entered values for confirmation.
@@ -1028,7 +1029,7 @@ class AlohaCorpApp(tk.Tk):
             return  # Ensure function exits on database error
 
         # Validate that all required fields are provided.
-        if not (emp_id and cash and credit and total and diff and date_val):
+        if not (emp_id and cash and credit and total and diff and date_val and location):
             messagebox.showerror("Error", "All fields are required.")
             return
 
@@ -1036,10 +1037,10 @@ class AlohaCorpApp(tk.Tk):
             cursor = self.connection.cursor()
             query = """
                 INSERT INTO day_closeout 
-                (employee_id, cash, credit, total, difference, date, notes) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (employee_id, cash, credit, total, difference, date, notes, location) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(query, (emp_id, cash, credit, total, diff, date_val, notes))
+            cursor.execute(query, (emp_id, cash, credit, total, diff, date_val, notes, location))
             self.connection.commit()
             messagebox.showinfo("Success", "Day closeout data added")
             self.go_back()  # Return to the previous screen
@@ -1311,6 +1312,7 @@ class AlohaCorpApp(tk.Tk):
         )
         self.expense_date_var.pack(pady=(0, 10))
 
+
         # Submit button
         submit_button = tk.Button(
             self.main_frame,
@@ -1330,6 +1332,7 @@ class AlohaCorpApp(tk.Tk):
         expense_type = self.expense_type_entry.get()
         expense_value = self.expense_value_entry.get()
         date_val = self.expense_date_var.get()
+        location = self.selected_store
 
         messagebox.showinfo(
             "Enter Expense",
@@ -1340,14 +1343,14 @@ class AlohaCorpApp(tk.Tk):
             messagebox.showwarning("Warning", "No database connection. This is a demo.")
             return
 
-        if not (expense_type and expense_value and date_val):
+        if not (expense_type and expense_value and date_val and location):
             messagebox.showerror("Error", "All fields are required.")
             return
 
         try:
             cursor = self.connection.cursor()
-            query = "INSERT INTO expenses (expense_type, expense_value, date) VALUES (%s, %s, %s)"
-            cursor.execute(query, (expense_type, expense_value, date_val))
+            query = "INSERT INTO expenses (expense_type, expense_value, date, location) VALUES (%s, %s, %s, %s)"
+            cursor.execute(query, (expense_type, expense_value, date_val, location))
             self.connection.commit()
             messagebox.showinfo("Success", "Expense added")
             self.go_back()  # Return to the previous screen
@@ -1616,6 +1619,7 @@ class AlohaCorpApp(tk.Tk):
 
     def process_records(self):
 
+        self.tree.pack_forget()
         self.tree = ttk.Treeview(self.page_frame, show='headings')
         self.tree.pack(fill=tk.BOTH, expand=True)
 
@@ -1778,6 +1782,7 @@ class AlohaCorpApp(tk.Tk):
         )
         self.invoice_date_due_entry.pack(pady=(0, 10))
 
+
         # Submit button – same style as in Add Employee form.
         submit_button = tk.Button(
             self.main_frame,
@@ -1798,6 +1803,7 @@ class AlohaCorpApp(tk.Tk):
         amount = self.invoice_amount_entry.get()
         date_received = self.invoice_date_received_entry.get()
         date_due = self.invoice_date_due_entry.get()
+        location = self.selected_store
         status = "Not Paid"
 
         messagebox.showinfo(
@@ -1813,14 +1819,14 @@ class AlohaCorpApp(tk.Tk):
             messagebox.showwarning("Warning", "No database connection. This is a demo.")
             return
 
-        if not (invoice_num and company and amount and date_received and date_due):
+        if not (invoice_num and company and amount and date_received and date_due and location):
             messagebox.showerror("Error", "All fields are required.")
             return
 
         try:
             cursor = self.connection.cursor()
-            query = "INSERT INTO invoices (status, date_received, company, invoice_number, amount, date_due) VALUES (%s, %s, %s, %s, %s, %s)"
-            cursor.execute(query, (status, date_received, company, invoice_num, amount, date_due))
+            query = "INSERT INTO invoices (status, date_received, company, invoice_number, amount, date_due, location) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            cursor.execute(query, (status, date_received, company, invoice_num, amount, date_due, location))
             self.connection.commit()
             messagebox.showinfo("Success", "Invoice added")
             self.go_back()  # Return to the previous screen
@@ -2042,6 +2048,7 @@ class AlohaCorpApp(tk.Tk):
         username = self.withdraw_username_entry.get()
         user_id = self.withdraw_id_entry.get()
         amount = self.withdraw_amount_entry.get()
+        location = self.selected_store
 
         # For demonstration, just show a message:
         messagebox.showinfo(
@@ -2049,7 +2056,7 @@ class AlohaCorpApp(tk.Tk):
             f"Username: {username}\nID: {user_id}\nAmount: {amount}"
         )
 
-        if not (username and user_id and amount):
+        if not (username and user_id and amount and location):
             messagebox.showerror("Error", "All fields are required.")
             return
 
@@ -2069,8 +2076,8 @@ class AlohaCorpApp(tk.Tk):
 
         try:
             cursor = self.connection.cursor()
-            query = "INSERT INTO withdrawals (username, user_id, amount) VALUES (%s, %s, %s)"
-            cursor.execute(query, (username, user_id, amount))
+            query = "INSERT INTO withdrawals (username, user_id, amount, location) VALUES (%s, %s, %s, %s)"
+            cursor.execute(query, (username, user_id, amount, location))
             self.connection.commit()
             messagebox.showinfo("Success", "Withdrawal added")
             self.go_back()  # Return to the previous screen
@@ -2156,6 +2163,8 @@ class AlohaCorpApp(tk.Tk):
         )
         self.merch_date_entry.pack(pady=(0, 20))
 
+
+
         # Submit button
         submit_button = tk.Button(
             self.main_frame,
@@ -2175,6 +2184,7 @@ class AlohaCorpApp(tk.Tk):
         """
         merch_type = self.merch_type_entry.get()
         merch_value = self.merch_value_entry.get()
+        location = self.selected_store
 
 
 
@@ -2191,14 +2201,14 @@ class AlohaCorpApp(tk.Tk):
             messagebox.showwarning("Warning", "No database connection. This is a demo.")
             return
 
-        if not (merch_type and merch_value and date_val):
+        if not (merch_type and merch_value and date_val and location):
             messagebox.showerror("Error", "All fields are required.")
             return
 
         try:
             cursor = self.connection.cursor()
-            query = "INSERT INTO merchandise (merchandise_type, merchandise_value, date) VALUES (%s, %s, %s)"
-            cursor.execute(query, (merch_type, merch_value, date_val))
+            query = "INSERT INTO merchandise (merchandise_type, merchandise_value, date, location) VALUES (%s, %s, %s, %s)"
+            cursor.execute(query, (merch_type, merch_value, date_val, location))
             self.connection.commit()
             messagebox.showinfo("Success", "Merchandise added")
             self.go_back()  # Return to the previous screen
@@ -2692,6 +2702,7 @@ class AlohaCorpApp(tk.Tk):
     # ----------------------------------------------------------------
     def go_back(self):
         if hasattr(self, "user_role"):
+            self.tree.pack_forget()
             if self.user_role == "Manager":
                 self.show_manager_home()
             elif self.user_role == "Owner":
@@ -2702,6 +2713,7 @@ class AlohaCorpApp(tk.Tk):
                 messagebox.showerror("Error", "Unknown role. Returning to welcome screen.")
                 self.show_welcome_screen()
         else:
+            self.tree.pack_forget()
             # If no role is stored, return to the welcome screen
             self.show_welcome_screen()
 
