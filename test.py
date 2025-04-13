@@ -34,7 +34,7 @@ class AlohaCorpApp(tk.Tk):
             self.connection = mysql.connector.connect(
                 host="localhost",    # or your host address
                 user="root",         # replace with your MySQL username
-                password="34691",     # replace with your MySQL password
+                password="root",     # replace with your MySQL password
                 database="triall"    # replace with your database name
             )
             if self.connection.is_connected():
@@ -1423,7 +1423,6 @@ class AlohaCorpApp(tk.Tk):
         if option == "Add Employee":
             self.show_add_employee_form()
         elif option == "Enter Expense":
-            # Manager can also see the expense form
             self.show_expense_form()
         elif option == "Enter Invoice":
             self.show_invoice_form()
@@ -2556,10 +2555,19 @@ class AlohaCorpApp(tk.Tk):
 
             print("Calculated bonus amount:", bonus_amt)
 
-            messagebox.showinfo("Success", f"Bonus amount: ${bonus_amt:.2f}")
-            self.go_back()  # Return to the previous screen
+            # Insert the bonus record into the employee_bonus table
+            insert_query = """
+                            INSERT INTO employee_bonus (employee_id, location, start_date, end_date, bonus_amount)
+                            VALUES (%s, %s, %s, %s, %s)
+                        """
+            cursor.execute(insert_query, (emp_id, location, start_date_val, end_date_val, bonus_amt))
+            self.connection.commit()
+
+            messagebox.showinfo("Success", f"Bonus amount: ${bonus_amt:.2f}\nBonus data saved successfully.")
+            self.go_back()
+
         except Error as err:
-            messagebox.showerror("Database Error", "Bonus not calculated")
+            messagebox.showerror("Database Error", "Bonus not calculated or not saved")
 
     # ----------------------------------------------------------------
     # ADD EMPLOYEE FORM
