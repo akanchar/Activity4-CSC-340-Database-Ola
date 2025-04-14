@@ -1662,11 +1662,19 @@ class AlohaCorpApp(tk.Tk):
         self.tree.pack(fill=tk.BOTH, expand=True)
         self.tree.pack_forget()  # Hide it initially
 
+        self.total_label = tk.Label(self.page_frame, text="", bg="white", fg="black", font=self.sub_font)
+        self.total_label.pack(pady=(5, 10))
+        self.total_label.pack_forget()  # Hide it initially
+
     def process_records(self):
 
         self.tree.pack_forget()
         self.tree = ttk.Treeview(self.page_frame, show='headings')
         self.tree.pack(fill=tk.BOTH, expand=True)
+
+        self.total_label.pack_forget()  # Hide it initially
+        self.total_label = tk.Label(self.page_frame, text="", bg="white", fg="black", font=self.sub_font)
+        self.total_label.pack(pady=(5, 10))
 
         location = self.location_var.get()
         record = self.record_var.get()
@@ -1727,6 +1735,26 @@ class AlohaCorpApp(tk.Tk):
                 self.tree.insert("", tk.END, values=row)
 
             self.tree.pack(fill=tk.BOTH, expand=True)
+
+            # Try to find and sum a relevant amount column
+            amount_column_candidates = ['expense_value', 'merchandise_value', 'amount', 'bonus_amount', 'total']
+            amount_col_index = None
+            for candidate in amount_column_candidates:
+                if candidate in col_names:
+                    amount_col_index = col_names.index(candidate)
+                    break
+
+            if amount_col_index is not None:
+                total_sum = sum(float(row[amount_col_index]) for row in rows if row[amount_col_index] is not None)
+                if col_names[amount_col_index] == "total":
+                    self.total_label.config(text=f"Total: ${total_sum:,.2f}")
+                    self.total_label.pack()
+                else:
+                    self.total_label.config(text=f"Total {col_names[amount_col_index].capitalize()}: ${total_sum:,.2f}")
+                    self.total_label.pack()
+            else:
+                self.total_label.config(text="")
+                self.total_label.pack_forget()
 
         except Error as err:
             messagebox.showerror("Database Error", "Records not found")
