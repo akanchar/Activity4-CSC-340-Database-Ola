@@ -294,7 +294,7 @@ class AlohaCorpApp(tk.Tk):
 
         dot_menu = tk.Menu(menu_button, tearoff=0)
         dot_menu.add_command(label="Sign Out", command=self.option1_action)
-        dot_menu.add_command(label="Dark Mode", command=self.toggle_dark_mode)
+        dot_menu.add_command(label="Change Theme", command=self.toggle_dark_mode)
 
         # 1) Add our new 'Change Password' menu item
         dot_menu.add_command(label="Change Password", command=self.show_change_password_form)
