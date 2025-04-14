@@ -66,7 +66,7 @@ class AlohaCorpApp(tk.Tk):
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
         self.page_frame = tk.Frame(self)  # Frame for records (Treeview) to show up
-        self.page_frame.pack(fill=tk.BOTH, expand=True)
+        self.page_frame.pack(fill=tk.BOTH, expand=False)
 
         # Initially hide Treeview until data is fetched
         self.tree = ttk.Treeview(self.page_frame, show='headings')
@@ -1663,7 +1663,7 @@ class AlohaCorpApp(tk.Tk):
         self.tree.pack_forget()  # Hide it initially
 
         self.total_label = tk.Label(self.page_frame, text="", bg="white", fg="black", font=self.sub_font)
-        self.total_label.pack(pady=(5, 10))
+        self.total_label.pack(pady=(20, 20))
         self.total_label.pack_forget()  # Hide it initially
 
     def process_records(self):
@@ -1674,7 +1674,7 @@ class AlohaCorpApp(tk.Tk):
 
         self.total_label.pack_forget()  # Hide it initially
         self.total_label = tk.Label(self.page_frame, text="", bg="white", fg="black", font=self.sub_font)
-        self.total_label.pack(pady=(5, 10))
+        self.total_label.pack(pady=(20, 20))
 
         location = self.location_var.get()
         record = self.record_var.get()
@@ -2781,6 +2781,7 @@ class AlohaCorpApp(tk.Tk):
     def go_back(self):
         if hasattr(self, "user_role"):
             self.tree.pack_forget()
+            self.total_label.pack_forget()
             if self.user_role == "Manager":
                 self.show_manager_home()
             elif self.user_role == "Owner":
@@ -2792,6 +2793,7 @@ class AlohaCorpApp(tk.Tk):
                 self.show_welcome_screen()
         else:
             self.tree.pack_forget()
+            self.total_label.pack_forget()
             # If no role is stored, return to the welcome screen
             self.show_welcome_screen()
 
