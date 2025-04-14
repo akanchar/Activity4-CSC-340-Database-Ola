@@ -1600,6 +1600,51 @@ class AlohaCorpApp(tk.Tk):
         )
         records_dropdown.pack(pady=(0, 10))
 
+        # Start Date (DateEntry)
+        start_label = tk.Label(
+            self.main_frame,
+            text="START DATE",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        start_label.pack(pady=(0, 2))
+
+        self.start_date = DateEntry(
+            self.main_frame,
+            width=28,
+            background='darkblue',
+            foreground='white',
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
+        )
+        self.start_date.pack(pady=(0, 10))
+
+        # End Date (DateEntry)
+        end_label = tk.Label(
+            self.main_frame,
+            text="END DATE",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        end_label.pack(pady=(0, 2))
+        self.end_date = DateEntry(
+            self.main_frame,
+            width=28,
+            background='darkblue',
+            foreground='white',
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
+        )
+        self.end_date.pack(pady=(0, 20))
+
         # Submit button – same style as in Add Employee form.
         submit_button = tk.Button(
             self.main_frame,
@@ -1625,32 +1670,40 @@ class AlohaCorpApp(tk.Tk):
 
         location = self.location_var.get()
         record = self.record_var.get()
+        start = self.start_date.get()
+        end = self.end_date.get()
 
         if not self.connection:
             messagebox.showwarning("Warning", "No database connection. This is a demo.")
             return
 
-        if not (location and record):
+        if not (location and record and start and end):
             messagebox.showerror("Error", "All fields are required.")
             return
 
         if record == "Invoices":
             rec_type = "invoices"
+            date_name = "date_received"
         elif record == "Expenses":
             rec_type = "expenses"
+            date_name = "date"
         elif record == "Merchandise":
             rec_type = "merchandise"
+            date_name = "date"
         elif record == "Bonuses":
             rec_type = "employee_bonus"
+            date_name = "start_date"
         elif record == "Day Closeouts":
             rec_type = "day_closeout"
+            date_name = "date"
         elif record == "In/Out Balances":
             rec_type = "in_out_bal"
+            date_name = "date"
 
         try:
             cursor = self.connection.cursor()
-            query = f"SELECT * FROM {rec_type} WHERE location = %s"
-            cursor.execute(query, (location,))
+            query = f"SELECT * FROM {rec_type} WHERE location = %s and {date_name} > %s and {date_name} < %s"
+            cursor.execute(query, (location, start, end))
             rows = cursor.fetchall()
 
             print(f"Fetched rows: {rows}")
@@ -1999,7 +2052,6 @@ class AlohaCorpApp(tk.Tk):
         )
         username_label.pack(pady=(0, 2))
         self.withdraw_username_entry = tk.Entry(self.main_frame, width=30)
-        self.withdraw_username_entry.insert(0, "Jora Martins")  # Example placeholder
         self.withdraw_username_entry.pack(pady=(0, 10))
 
         # ID field
@@ -2012,7 +2064,6 @@ class AlohaCorpApp(tk.Tk):
         )
         id_label.pack(pady=(0, 2))
         self.withdraw_id_entry = tk.Entry(self.main_frame, width=30)
-        self.withdraw_id_entry.insert(0, "0.0")  # Example placeholder
         self.withdraw_id_entry.pack(pady=(0, 10))
 
         # Amount field
@@ -2025,7 +2076,6 @@ class AlohaCorpApp(tk.Tk):
         )
         amount_label.pack(pady=(0, 2))
         self.withdraw_amount_entry = tk.Entry(self.main_frame, width=30)
-        self.withdraw_amount_entry.insert(0, "0.0")  # Example placeholder
         self.withdraw_amount_entry.pack(pady=(0, 10))
 
         # Submit button
