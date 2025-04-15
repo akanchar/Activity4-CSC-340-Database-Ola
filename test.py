@@ -218,13 +218,19 @@ class AlohaCorpApp(tk.Tk):
 
     def create_payroll_table(self):
         create_table_query = """
-                CREATE TABLE IF NOT EXISTS payroll (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    start_date DATE,
-    end_date DATE,
-    multiple_weeks_view BOOLEAN
-)
-                """
+        CREATE TABLE IF NOT EXISTS payroll (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            employee_id INT,
+            store VARCHAR(255),
+            start_date DATE,
+            end_date DATE,
+            total_hours DECIMAL(10,2),
+            rate_per_hour DECIMAL(10,2),
+            subtotal DECIMAL(10,2),
+            bonus DECIMAL(10,2),
+            total_payroll DECIMAL(10,2)    
+        )
+        """
         try:
             cursor = self.connection.cursor()
             cursor.execute(create_table_query)
@@ -1914,13 +1920,6 @@ class AlohaCorpApp(tk.Tk):
 
 
     def show_payroll_form(self):
-        """
-        Displays a Payroll form with:
-          - FROM date dropdown
-          - TO date dropdown
-          - Optional 'Multiple Weeks View' checkbox
-          - Submit button
-        """
         self.clear_main_frame()
 
         # Heading
@@ -1933,28 +1932,71 @@ class AlohaCorpApp(tk.Tk):
         )
         heading_label.pack(pady=(20, 5))
 
-        # Subheading (e.g. "You're logged in as Manager")
+        # Subheading
         sub_label = tk.Label(
             self.main_frame,
-            text="You're logged in as Manager",
+            text="Enter Payroll Details",
             bg="white",
             fg="black",
             font=self.sub_font
         )
         sub_label.pack(pady=(0, 20))
 
-        # FROM date
-        from_label = tk.Label(
+        # Store dropdown
+        store_label = tk.Label(
             self.main_frame,
-            text="FROM",
+            text="Select Store:",
             bg="white",
             fg="black",
             font=self.sub_font
         )
-        from_label.pack(pady=(0, 2))
+        store_label.pack(pady=(0, 2))
+        stores = ["Store 1", "Store 2", "Store 3"]
+        self.payroll_store_var = tk.StringVar()
+        self.payroll_store_var.set(stores[0])
+        store_dropdown = ttk.Combobox(
+            self.main_frame,
+            textvariable=self.payroll_store_var,
+            values=stores,
+            state="readonly"
+        )
+        store_dropdown.pack(pady=(0, 10))
 
-        self.from_date_var = tk.StringVar()
-        payroll_from_dropdown = DateEntry(
+        # Employee ID input
+        emp_label = tk.Label(
+            self.main_frame,
+            text="Employee ID:",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        emp_label.pack(pady=(0, 2))
+        self.payroll_emp_id_entry = tk.Entry(self.main_frame, width=30)
+        self.payroll_emp_id_entry.pack(pady=(0, 10))
+
+        # Bonus input
+        bonus_label = tk.Label(
+            self.main_frame,
+            text="Employee Bonus:",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        bonus_label.pack(pady=(0, 2))
+        self.payroll_bonus_entry = tk.Entry(self.main_frame, width=30)
+        self.payroll_bonus_entry.pack(pady=(0, 10))
+
+        # FROM Date field
+        from_date_title = tk.Label(
+            self.main_frame,
+            text="From Date:",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        from_date_title.pack(pady=(0, 2))
+
+        self.from_date_entry = DateEntry(
             self.main_frame,
             width=28,
             background='darkblue',
@@ -1965,20 +2007,19 @@ class AlohaCorpApp(tk.Tk):
             month=datetime.now().month,
             day=datetime.now().day
         )
-        payroll_from_dropdown.pack(pady=(0, 10))
+        self.from_date_entry.pack(pady=(0, 10))
 
-        # TO date
-        to_label = tk.Label(
+        # FROM Date field with title
+        to_date_title = tk.Label(
             self.main_frame,
-            text="TO",
+            text="To Date:",
             bg="white",
             fg="black",
             font=self.sub_font
         )
-        to_label.pack(pady=(0, 2))
+        to_date_title.pack(pady=(0, 2))
 
-        self.to_date_var = tk.StringVar()
-        payroll_to_dropdown = DateEntry(
+        self.to_date_entry = DateEntry(
             self.main_frame,
             width=28,
             background='darkblue',
@@ -1989,20 +2030,20 @@ class AlohaCorpApp(tk.Tk):
             month=datetime.now().month,
             day=datetime.now().day
         )
-        payroll_to_dropdown.pack(pady=(0, 10))
+        self.to_date_entry.pack(pady=(0, 10))
 
-        # Optional: Multiple Weeks View checkbox
-        self.multiple_weeks_var = tk.BooleanVar(value=False)
-        multiple_weeks_check = tk.Checkbutton(
-            self.main_frame,
-            text="Multiple Weeks View",
-            bg="white",
-            fg="black",
-            variable=self.multiple_weeks_var,
-            onvalue=True,
-            offvalue=False
-        )
-        multiple_weeks_check.pack(pady=(0, 20))
+        # Multiple Weeks View checkbox (if needed)
+        # self.multiple_weeks_var = tk.BooleanVar(value=False)
+        # multiple_weeks_check = tk.Checkbutton(
+        #     self.main_frame,
+        #     text="Multiple Weeks View",
+        #     bg="white",
+        #     fg="black",
+        #     variable=self.multiple_weeks_var,
+        #     onvalue=True,
+        #     offvalue=False
+        # )
+        # multiple_weeks_check.pack(pady=(0, 20))
 
         # Submit button
         submit_button = tk.Button(
@@ -2017,24 +2058,109 @@ class AlohaCorpApp(tk.Tk):
         submit_button.pack()
 
     def process_payroll(self):
-        """
-        Collects the payroll date range and checkbox state,
-        and displays them in a message.
-        (No DB insert or calculation yet.)
-        """
-        from_date = self.from_date_var.get()
-        to_date = self.to_date_var.get()
-        multiple_weeks = self.multiple_weeks_var.get()  # True/False
+        import datetime  # Ensure datetime is imported
 
-        # For now, just show a message
-        messagebox.showinfo(
-            "Payroll Submission",
-            f"FROM: {from_date}\n"
-            f"TO: {to_date}\n"
-            f"Multiple Weeks View: {multiple_weeks}"
+        # Get inputs from the GUI form
+        store = self.payroll_store_var.get()
+        emp_id = self.payroll_emp_id_entry.get().strip()
+        bonus_input = self.payroll_bonus_entry.get().strip()
+        from_date = self.from_date_entry.get()
+        to_date = self.to_date_entry.get()
+        #multiple_weeks = self.multiple_weeks_var.get()
+
+
+        # Validate required fields
+        if not (store and emp_id and from_date and to_date):
+            messagebox.showerror("Error", "Please fill in all required fields.")
+            return
+
+        try:
+            bonus = float(bonus_input) if bonus_input else 0.0
+        except ValueError:
+            messagebox.showerror("Error", "Bonus must be a numeric value.")
+            return
+
+        # Query the in_out_bal table for time records within the date range
+        try:
+            cursor = self.connection.cursor()
+            query = """
+                SELECT clock_in, clock_out 
+                FROM in_out_bal 
+                WHERE emp_id = %s AND location = %s 
+                  AND date >= %s AND date <= %s
+            """
+            cursor.execute(query, (emp_id, store, from_date, to_date))
+            rows = cursor.fetchall()
+        except Error as err:
+            messagebox.showerror("Database Error", f"Error retrieving time records: {err}")
+            return
+
+        if not rows:
+            messagebox.showerror("Error", "No clock records found for this employee in the given date range.")
+            return
+
+        # Calculate the total hours worked
+        total_hours = 0.0
+        for row in rows:
+            clock_in_str, clock_out_str = row
+            try:
+                t_in = datetime.datetime.strptime(str(clock_in_str), "%H:%M:%S")
+                t_out = datetime.datetime.strptime(str(clock_out_str), "%H:%M:%S")
+            except Exception as e:
+                messagebox.showerror("Error", f"Time format error: {e}")
+                return
+            # Calculate the difference in seconds, then convert to hours
+            diff = (t_out - t_in).seconds / 3600.0
+            total_hours += diff
+
+        # Query the employee_rates table for the latest rate
+        try:
+            rate_query = """
+                SELECT rate_per_hour 
+                FROM employee_rates 
+                WHERE employee_id = %s AND location = %s 
+                ORDER BY date DESC LIMIT 1
+            """
+            cursor.execute(rate_query, (emp_id, store))
+            rate_result = cursor.fetchone()
+            if not rate_result:
+                messagebox.showerror("Error", "Employee rate not found for the selected store.")
+                return
+            rate_per_hour = float(rate_result[0])
+        except Error as err:
+            messagebox.showerror("Database Error", f"Error retrieving employee rate: {err}")
+            return
+
+        # Calculate subtotal (total hours * rate), then payroll total (subtotal + bonus)
+        subtotal = total_hours * rate_per_hour
+        payroll_total = subtotal + bonus
+
+        # Create a details message
+        details = (
+            f"Total Hours Worked: {total_hours:.2f} hours\n"
+            f"Rate per Hour: ${rate_per_hour:.2f}\n"
+            f"Subtotal (Hours * Rate): ${subtotal:.2f}\n"
+            f"Bonus: ${bonus:.2f}\n"
+            f"Total Payroll: ${payroll_total:.2f}"
         )
+        messagebox.showinfo("Payroll Calculation", details)
 
-    # Later, you could query your DB to calculate payroll, etc.
+        # Insert the payroll record into the payroll table
+        try:
+            insert_query = """
+                INSERT INTO payroll 
+                (employee_id, store, start_date, end_date, total_hours, rate_per_hour, subtotal, bonus, total_payroll)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(insert_query, (
+                emp_id, store, from_date, to_date, total_hours, rate_per_hour, subtotal, bonus, payroll_total
+
+            ))
+            self.connection.commit()
+            messagebox.showinfo("Success", "Payroll record added successfully.")
+        except Error as err:
+            messagebox.showerror("Database Error", f"Error inserting payroll record: {err}")
+
 
     #from tkcalendar import DateEntry
     def show_withdraw_form(self):
