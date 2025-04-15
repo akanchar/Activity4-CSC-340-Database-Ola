@@ -10,7 +10,6 @@ from datetime import datetime
 class AlohaCorpApp(tk.Tk):
     def __init__(self):
         super().__init__()
-
         self.title("Aloha Corp")
         self.geometry("700x700")
         self.configure(bg="white")
@@ -25,7 +24,6 @@ class AlohaCorpApp(tk.Tk):
         # For store or role selection
         self.selected_store = None
         self.selected_role = None
-
 
         # ----------------------------------------------------------------
         # DATABASE CONNECTION & TABLE CREATION
@@ -2778,10 +2776,15 @@ class AlohaCorpApp(tk.Tk):
     # ----------------------------------------------------------------
     # NAVIGATION & MISC
     # ----------------------------------------------------------------
+
     def go_back(self):
-        if hasattr(self, "user_role"):
-            self.tree.pack_forget()
+        self.tree.pack_forget()
+
+        # Only try to hide total_label if it exists
+        if hasattr(self, "total_label"):
             self.total_label.pack_forget()
+
+        if hasattr(self, "user_role"):
             if self.user_role == "Manager":
                 self.show_manager_home()
             elif self.user_role == "Owner":
@@ -2792,9 +2795,6 @@ class AlohaCorpApp(tk.Tk):
                 messagebox.showerror("Error", "Unknown role. Returning to welcome screen.")
                 self.show_welcome_screen()
         else:
-            self.tree.pack_forget()
-            self.total_label.pack_forget()
-            # If no role is stored, return to the welcome screen
             self.show_welcome_screen()
 
     # def option1_action(self):
