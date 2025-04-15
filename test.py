@@ -12,9 +12,11 @@ class AlohaCorpApp(tk.Tk):
         super().__init__()
         self.title("Aloha Corp")
         self.geometry("700x700")
-        self.configure(bg="white")
+        self.bg_color = "#f7f9fc"
+        self.accent_color = "#007acc"
+        self.configure(bg=self.bg_color)
 
-        # Custom fonts for headings
+        # Fonts
         self.header_font = tkfont.Font(family="Segoe UI", size=18, weight="bold")
         self.sub_font = tkfont.Font(family="Segoe UI", size=12)
 
@@ -24,6 +26,11 @@ class AlohaCorpApp(tk.Tk):
         # For store or role selection
         self.selected_store = None
         self.selected_role = None
+
+        self.style = ttk.Style(self)
+        self.style.theme_use("clam")  # Try 'alt' or 'default' too
+        self.style.configure("TButton", font=("Segoe UI", 10), padding=6)
+        self.style.configure("TLabel", background=self.bg_color)
 
         # ----------------------------------------------------------------
         # DATABASE CONNECTION & TABLE CREATION
@@ -444,6 +451,22 @@ class AlohaCorpApp(tk.Tk):
             font=self.sub_font
         )
         sub_label.pack(pady=(0, 20))
+
+        welcome_label = ttk.Label(
+            self.main_frame,
+            text="👋 Welcome to Aloha Corp",
+            font=self.header_font,
+            foreground=self.accent_color
+        )
+        welcome_label.pack(pady=(60, 10))
+
+        subtitle = ttk.Label(
+            self.main_frame,
+            text="Your all-in-one business dashboard",
+            font=self.sub_font,
+            foreground="#555"
+        )
+        subtitle.pack(pady=(0, 40))
 
         # Login button
         login_button = tk.Button(
