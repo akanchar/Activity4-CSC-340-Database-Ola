@@ -436,7 +436,7 @@ class AlohaCorpApp(tk.Tk):
 
         heading_label = tk.Label(
             self.main_frame,
-            text="Welcome To Aloha Corp.",
+            text="Welcome",
             bg="white",
             fg="black",
             font=self.header_font
@@ -1737,7 +1737,7 @@ class AlohaCorpApp(tk.Tk):
 
         try:
             cursor = self.connection.cursor()
-            query = f"SELECT * FROM {rec_type} WHERE location = %s and {date_name} > %s and {date_name} < %s"
+            query = f"SELECT * FROM {rec_type} WHERE location = %s and {date_name} >= %s and {date_name} <= %s"
             cursor.execute(query, (location, start, end))
             rows = cursor.fetchall()
 
@@ -1763,25 +1763,59 @@ class AlohaCorpApp(tk.Tk):
 
             self.tree.pack(fill=tk.BOTH, expand=True)
 
-            # Try to find and sum a relevant amount column
-            amount_column_candidates = ['expense_value', 'merchandise_value', 'amount', 'bonus_amount', 'total']
-            amount_col_index = None
-            for candidate in amount_column_candidates:
-                if candidate in col_names:
-                    amount_col_index = col_names.index(candidate)
-                    break
+            if record == "Day Closeouts":
+                total_sum = sum(float(row[4]) for row in rows if row[4] is not None)
+                cash_sum = sum(float(row[2]) for row in rows if row[2] is not None)
+                credit_sum = sum(float(row[3]) for row in rows if row[3] is not None)
 
-            if amount_col_index is not None:
-                total_sum = sum(float(row[amount_col_index]) for row in rows if row[amount_col_index] is not None)
-                if col_names[amount_col_index] == "total":
-                    self.total_label.config(text=f"Total: ${total_sum:,.2f}")
-                    self.total_label.pack()
-                else:
-                    self.total_label.config(text=f"Total {col_names[amount_col_index].capitalize()}: ${total_sum:,.2f}")
-                    self.total_label.pack()
+                cursor = self.connection.cursor()
+                query = f"SELECT * FROM expenses WHERE location = %s and date >= %s and date <= %s"
+                cursor.execute(query, (location, start, end))
+                expenses = cursor.fetchall()
+                total_expenses = sum(float(row[2]) for row in expenses if row[2] is not None)
+
+                query = f"SELECT * FROM merchandise WHERE location = %s and date >= %s and date <= %s"
+                cursor.execute(query, (location, start, end))
+                merchandise = cursor.fetchall()
+                total_merchandise = sum(float(row[2]) for row in merchandise if row[2] is not None)
+
+                profit = total_sum - total_expenses - total_merchandise
+
+                self.total_label.config(text=f"Cash Total: ${cash_sum:,.2f}      Credit Total: ${credit_sum:,.2f}      Gross Profit: ${total_sum:,.2f}      Net Profit: ${profit:,.2f}")
+                self.total_label.pack()
+
+            elif record == "Invoices":
+
+                cursor = self.connection.cursor()
+                query = f"SELECT * FROM invoices WHERE location = %s and status = %s and date_received >= %s and date_received <= %s"
+                cursor.execute(query, (location, 'Not Paid', start, end))
+                invoices = cursor.fetchall()
+                total_invoices = sum(float(row[5]) for row in invoices if row[5] is not None)
+
+                self.total_label.config(text=f"Total Unpaid Invoices: ${total_invoices:,.2f}")
+                self.total_label.pack()
+
             else:
-                self.total_label.config(text="")
-                self.total_label.pack_forget()
+
+                # Try to find and sum a relevant amount column
+                amount_column_candidates = ['expense_value', 'merchandise_value', 'amount', 'bonus_amount', 'total']
+                amount_col_index = None
+                for candidate in amount_column_candidates:
+                    if candidate in col_names:
+                        amount_col_index = col_names.index(candidate)
+                        break
+
+                if amount_col_index is not None:
+                    total_sum = sum(float(row[amount_col_index]) for row in rows if row[amount_col_index] is not None)
+                    if col_names[amount_col_index] == "total":
+                        self.total_label.config(text=f"Total: ${total_sum:,.2f}")
+                        self.total_label.pack()
+                    else:
+                        self.total_label.config(text=f"Total {col_names[amount_col_index].capitalize()}: ${total_sum:,.2f}")
+                        self.total_label.pack()
+                else:
+                    self.total_label.config(text="")
+                    self.total_label.pack_forget()
 
         except Error as err:
             messagebox.showerror("Database Error", "Records not found")
@@ -1890,6 +1924,26 @@ class AlohaCorpApp(tk.Tk):
         )
         self.invoice_date_due_entry.pack(pady=(0, 10))
 
+        # Store dropdown
+        status_label = tk.Label(
+            self.main_frame,
+            text="Status:",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        status_label.pack(pady=(0, 2))
+        statuses = ["Paid", "Not Paid"]
+        self.invoice_status_var = tk.StringVar()
+        self.invoice_status_var.set(statuses[0])
+        status_dropdown = ttk.Combobox(
+            self.main_frame,
+            textvariable=self.invoice_status_var,
+            values=statuses,
+            state="readonly"
+        )
+        status_dropdown.pack(pady=(0, 10))
+
 
         # Submit button – same style as in Add Employee form.
         submit_button = tk.Button(
@@ -1912,7 +1966,7 @@ class AlohaCorpApp(tk.Tk):
         date_received = self.invoice_date_received_entry.get()
         date_due = self.invoice_date_due_entry.get()
         location = self.selected_store
-        status = "Not Paid"
+        status = self.invoice_status_var.get()
 
         messagebox.showinfo(
             "Invoice Submitted",
