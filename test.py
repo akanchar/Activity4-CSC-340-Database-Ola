@@ -1,11 +1,12 @@
 import tkinter as tk
 import pandas as pd
-from tkinter import font as tkfont, ttk, messagebox
+from tkinter import font as tkfont, ttk, messagebox, filedialog
 import mysql.connector
 from mysql.connector import Error
 import bcrypt
 from tkcalendar import DateEntry
 from datetime import datetime
+import csv
 
 class AlohaCorpApp(tk.Tk):
     def __init__(self):
@@ -1689,6 +1690,17 @@ class AlohaCorpApp(tk.Tk):
         )
         submit_button.pack(pady=10)
 
+        export_button = tk.Button(
+            self.main_frame,
+            text="Export to CSV",
+            bg="black",
+            fg="white",
+            width=20,
+            height=2,
+            command=self.export_to_csv
+        )
+        export_button.pack(pady=10)
+
         # Create the Treeview widget once
         self.tree = ttk.Treeview(self.page_frame, show='headings')
         self.tree.pack(fill=tk.BOTH, expand=True)
@@ -1699,7 +1711,6 @@ class AlohaCorpApp(tk.Tk):
         self.total_label.pack_forget()  # Hide it initially
 
     def process_records(self):
-
         self.tree.pack_forget()
         self.tree = ttk.Treeview(self.page_frame, show='headings')
         self.tree.pack(fill=tk.BOTH, expand=True)
@@ -1755,6 +1766,25 @@ class AlohaCorpApp(tk.Tk):
 
             col_names = [desc[0] for desc in cursor.description]
 
+            # ----------------------------
+            # **Store** for export:
+            self.exported_data = rows
+            self.exported_columns = col_names
+            # ----------------------------
+
+            self.tree["columns"] = col_names
+            self.tree.delete(*self.tree.get_children())
+
+            for col in col_names:
+                self.tree.heading(col, text=col)
+                self.tree.column(col, width=100)
+
+            for row in rows:
+                self.tree.insert("", tk.END, values=row)
+
+            self.tree.pack(fill=tk.BOTH, expand=True)
+
+
             # Update Treeview
             self.tree["columns"] = col_names
             self.tree.delete(*self.tree.get_children())
@@ -1791,6 +1821,36 @@ class AlohaCorpApp(tk.Tk):
         except Error as err:
             messagebox.showerror("Database Error", "Records not found")
 
+    def export_to_csv(self):
+        """
+        Exports the most recently fetched data (rows + column names)
+        to a CSV file.
+        """
+        # Check if we have any data stored
+        if not hasattr(self, 'exported_data') or not hasattr(self, 'exported_columns'):
+            messagebox.showwarning("No Data", "No data to export. Please run a search first.")
+            return
+
+        # Ask user for save location
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")]
+        )
+        if not file_path:
+            return  # user canceled
+
+        # Write to CSV
+        try:
+            with open(file_path, "w", newline="", encoding="utf-8") as csvfile:
+                writer = csv.writer(csvfile)
+                # Write column headers
+                writer.writerow(self.exported_columns)
+                # Write each row of data
+                for row in self.exported_data:
+                    writer.writerow(row)
+            messagebox.showinfo("Export Successful", f"Data exported to {file_path}")
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export data: {e}")
 
     def show_invoice_form(self):
         self.clear_main_frame()
