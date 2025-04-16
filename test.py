@@ -39,7 +39,7 @@ class AlohaCorpApp(tk.Tk):
             self.connection = mysql.connector.connect(
                 host="localhost",    # or your host address
                 user="root",         # replace with your MySQL username
-                password="root",     # replace with your MySQL password
+                password="34691",     # replace with your MySQL password
                 database="triall"    # replace with your database name
             )
             if self.connection.is_connected():
@@ -624,6 +624,7 @@ class AlohaCorpApp(tk.Tk):
             if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
                 # 1) Store the current user's ID for future reference
                 self.logged_in_user_id = user_id
+                self.logged_in_username = username  # store the username
 
                 messagebox.showinfo("Success", f"Welcome, {username}!")
 
@@ -936,11 +937,13 @@ class AlohaCorpApp(tk.Tk):
 
         sub_label = tk.Label(
             self.main_frame,
-            text="You're logged in as Employee 1 in Store 1",
+            text=f"You’re logged in as {self.logged_in_username} in {self.selected_store}",
             bg="white",
             fg="black",
             font=self.sub_font
         )
+
+
         sub_label.pack(pady=(0, 20))
 
         # Employee Username
@@ -1091,11 +1094,13 @@ class AlohaCorpApp(tk.Tk):
 
         sub_label = tk.Label(
             self.main_frame,
-            text="You're logged in as Employee 1 in Store 1",
+            text=f"You’re logged in as {self.logged_in_username} in {self.selected_store}",
             bg="white",
             fg="black",
             font=self.sub_font
         )
+
+
         sub_label.pack(pady=(0, 20))
 
         # Employee Username
@@ -1304,7 +1309,7 @@ class AlohaCorpApp(tk.Tk):
 
         sub_label = tk.Label(
             self.main_frame,
-            text="You're logged in as Manager 1 in Store 1",  # Or adapt for Employee/Owner
+            text=f"You’re logged in as {self.logged_in_username} in {self.selected_store}",
             bg="white",
             fg="black",
             font=self.sub_font
@@ -2207,10 +2212,9 @@ class AlohaCorpApp(tk.Tk):
         )
         heading_label.pack(pady=(20, 5))
 
-        # Subheading: "You're logged in as Manager 1 in Store 1" (adapt as needed)
         sub_label = tk.Label(
             self.main_frame,
-            text="You're logged in as Manager 1 in Store 1",
+            text=f"You’re logged in as {self.logged_in_username} in {self.selected_store}",
             bg="white",
             fg="black",
             font=self.sub_font
@@ -2330,10 +2334,9 @@ class AlohaCorpApp(tk.Tk):
         )
         heading_label.pack(pady=(20, 5))
 
-        # Subheading: "You're logged in as Manager 1 in Store 1" (adapt as needed)
         sub_label = tk.Label(
             self.main_frame,
-            text="You're logged in as Manager 1 in Store 1",
+            text=f"You’re logged in as {self.logged_in_username} in {self.selected_store}",
             bg="white",
             fg="black",
             font=self.sub_font
@@ -2463,10 +2466,9 @@ class AlohaCorpApp(tk.Tk):
         )
         heading_label.pack(pady=(20, 5))
 
-        # Subheading (for demonstration, "You're logged in as Manager 1")
         sub_label = tk.Label(
             self.main_frame,
-            text="You're logged in as Manager 1",
+            text=f"You’re logged in as {self.logged_in_username} in {self.selected_store}",
             bg="white",
             fg="black",
             font=self.sub_font
@@ -2588,10 +2590,9 @@ class AlohaCorpApp(tk.Tk):
         )
         heading_label.pack(pady=(20, 5))
 
-        # Subheading: "You're logged in as Manager 1" (adapt as needed)
         sub_label = tk.Label(
             self.main_frame,
-            text="You're logged in as Manager 1",
+            text=f"You’re logged in as {self.logged_in_username} in {self.selected_store}",
             bg="white",
             fg="black",
             font=self.sub_font
