@@ -2069,6 +2069,15 @@ class AlohaCorpApp(tk.Tk):
                 self.tree.insert("", tk.END, values=r)
             self.tree.pack(fill=tk.BOTH, expand=True)
 
+            edit_button = tk.Button(
+                self.page_frame,
+                text="Edit Selected Invoice",
+                bg="darkblue",
+                fg="white",
+                command=self.edit_selected_invoice
+            )
+            edit_button.pack(pady=10)
+
             # sum unpaid
             amt_idx = cols.index("amount")
             stat_idx = cols.index("status")
@@ -2078,6 +2087,73 @@ class AlohaCorpApp(tk.Tk):
 
         except Error as err:
             messagebox.showerror("Database Error", str(err))
+
+    def edit_selected_invoice(self):
+        selected = self.tree.focus()
+        if not selected:
+            messagebox.showwarning("Warning", "Please select an invoice to edit.")
+            return
+
+        values = self.tree.item(selected, 'values')
+        self.selected_invoice = dict(zip(self.exported_columns, values))
+        self.show_invoice_edit_form()
+
+    def show_invoice_edit_form(self):
+        self.clear_main_frame()
+
+        tk.Label(self.main_frame, text="Edit Invoice", font=self.header_font).pack(pady=10)
+        self.invoice_fields = {}
+
+        for col, val in self.selected_invoice.items():
+            if col == "id":
+                continue  # Don't edit the primary key
+
+            tk.Label(self.main_frame, text=col, font=self.sub_font).pack()
+
+            if col == "status":
+                var = tk.StringVar(value=val)
+                field = ttk.Combobox(self.main_frame, textvariable=var,
+                                     values=["Paid", "Not Paid"], state="readonly", width=28)
+            elif col in ["date_received", "date_due"]:
+                # Use DateEntry for dates
+                field = DateEntry(self.main_frame, width=28, background='darkblue',
+                                  foreground='white', borderwidth=2, date_pattern="yyyy-mm-dd")
+                field.set_date(val)
+            else:
+                field = tk.Entry(self.main_frame, width=30)
+                field.insert(0, val)
+
+            field.pack(pady=(0, 10))
+            self.invoice_fields[col] = field
+
+        # Submit button
+        tk.Button(self.main_frame, text="Save Changes", bg="green", fg="white",
+                  width=20, height=2, command=self.save_invoice_changes).pack(pady=20)
+
+    def save_invoice_changes(self):
+        try:
+            updated = {col: field.get() for col, field in self.invoice_fields.items()}
+            invoice_id = self.selected_invoice["id"]
+
+            # Build SQL
+            columns = ", ".join(f"{col} = %s" for col in updated.keys())
+            values = list(updated.values()) + [invoice_id]
+            query = f"UPDATE invoices SET {columns} WHERE id = %s"
+
+            cursor = self.connection.cursor()
+            cursor.execute(query, values)
+            self.connection.commit()
+
+            messagebox.showinfo("Success", "Invoice updated successfully.")
+            # Hide the old table and totals
+            self.tree.pack_forget()
+            self.total_label.pack_forget()
+            self.show_records_form()
+
+        except Error as e:
+            messagebox.showerror("Error", f"Failed to update invoice: {e}")
+
+
     def export_to_csv(self):
         """
         Exports the most recently fetched data (rows + column names)
