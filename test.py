@@ -1943,6 +1943,14 @@ class AlohaCorpApp(tk.Tk):
             self.tree.pack(fill=tk.BOTH, expand=True)
 
             if record == "Day Closeouts":
+                edit_button = tk.Button(
+                    self.page_frame,
+                    text="Edit Selected Closeout",
+                    bg="darkblue",
+                    fg="white",
+                    command=self.edit_selected_closeout
+                )
+                edit_button.pack(pady=10)
                 total_sum = sum(float(row[4]) for row in rows if row[4] is not None)
                 cash_sum = sum(float(row[2]) for row in rows if row[2] is not None)
                 credit_sum = sum(float(row[3]) for row in rows if row[3] is not None)
@@ -1964,7 +1972,28 @@ class AlohaCorpApp(tk.Tk):
                     text=f"Cash Total: ${cash_sum:,.2f}      Credit Total: ${credit_sum:,.2f}      Gross Profit: ${total_sum:,.2f}      Net Profit: ${profit:,.2f}")
                 self.total_label.pack()
 
+            elif record == "Merchandise":
+                edit_button = tk.Button(
+                    self.page_frame,
+                    text="Edit Selected Merchandise",
+                    bg="darkblue",
+                    fg="white",
+                    command=self.edit_selected_merchandise
+                )
+                edit_button.pack(pady=10)
 
+
+            elif record == "Expenses":
+                edit_button = tk.Button(
+                    self.page_frame,
+                    text="Edit Selected Expense",
+                    bg="darkblue",
+                    fg="white",
+                    command=self.edit_selected_expense
+                )
+                edit_button.pack(pady=10)
+
+            
             elif record == "Invoices":
 
                 cursor = self.connection.cursor()
@@ -2153,6 +2182,182 @@ class AlohaCorpApp(tk.Tk):
         except Error as e:
             messagebox.showerror("Error", f"Failed to update invoice: {e}")
 
+    def edit_selected_expense(self):
+        selected = self.tree.focus()
+        if not selected:
+            messagebox.showwarning("Warning", "Please select an expense to edit.")
+            return
+
+        values = self.tree.item(selected, 'values')
+        self.selected_expense = dict(zip(self.exported_columns, values))
+        self.show_expense_edit_form()
+
+    def show_expense_edit_form(self):
+        self.clear_main_frame()
+
+        tk.Label(self.main_frame, text="Edit Expense", font=self.header_font).pack(pady=10)
+        self.expense_fields = {}
+
+        for col, val in self.selected_expense.items():
+            if col == "id":
+                continue  # Don't allow editing primary key
+
+            tk.Label(self.main_frame, text=col, font=self.sub_font).pack()
+
+            if col == "date":
+                field = DateEntry(self.main_frame, width=28, background='darkblue',
+                                  foreground='white', borderwidth=2, date_pattern="yyyy-mm-dd")
+                field.set_date(val)
+            else:
+                field = tk.Entry(self.main_frame, width=30)
+                field.insert(0, val)
+
+            field.pack(pady=(0, 10))
+            self.expense_fields[col] = field
+
+        tk.Button(self.main_frame, text="Save Changes", bg="green", fg="white",
+                  width=20, height=2, command=self.save_expense_changes).pack(pady=20)
+
+    def save_expense_changes(self):
+        try:
+            updated = {col: field.get() for col, field in self.expense_fields.items()}
+            expense_id = self.selected_expense["id"]
+
+            columns = ", ".join(f"{col} = %s" for col in updated.keys())
+            values = list(updated.values()) + [expense_id]
+            query = f"UPDATE expenses SET {columns} WHERE id = %s"
+
+            cursor = self.connection.cursor()
+            cursor.execute(query, values)
+            self.connection.commit()
+
+            messagebox.showinfo("Success", "Expense updated successfully.")
+            self.tree.pack_forget()
+            self.total_label.pack_forget()
+            self.show_records_form()
+        except Error as e:
+            messagebox.showerror("Error", f"Failed to update expense: {e}")
+
+    def edit_selected_merchandise(self):
+        selected = self.tree.focus()
+        if not selected:
+            messagebox.showwarning("Warning", "Please select a merchandise entry to edit.")
+            return
+
+        values = self.tree.item(selected, 'values')
+        self.selected_merchandise = dict(zip(self.exported_columns, values))
+        self.show_merchandise_edit_form()
+
+    def show_merchandise_edit_form(self):
+        self.clear_main_frame()
+
+        tk.Label(self.main_frame, text="Edit Merchandise", font=self.header_font).pack(pady=10)
+        self.merch_fields = {}
+
+        for col, val in self.selected_merchandise.items():
+            if col == "id":
+                continue  # Don't allow editing ID
+
+            tk.Label(self.main_frame, text=col, font=self.sub_font).pack()
+
+            if col == "date":
+                field = DateEntry(self.main_frame, width=28, background='darkblue',
+                                  foreground='white', borderwidth=2, date_pattern="yyyy-mm-dd")
+                field.set_date(val)
+            else:
+                field = tk.Entry(self.main_frame, width=30)
+                field.insert(0, val)
+
+            field.pack(pady=(0, 10))
+            self.merch_fields[col] = field
+
+        tk.Button(self.main_frame, text="Save Changes", bg="green", fg="white",
+                  width=20, height=2, command=self.save_merchandise_changes).pack(pady=20)
+
+    def save_merchandise_changes(self):
+        try:
+            updated = {col: field.get() for col, field in self.merch_fields.items()}
+            merch_id = self.selected_merchandise["id"]
+
+            columns = ", ".join(f"{col} = %s" for col in updated.keys())
+            values = list(updated.values()) + [merch_id]
+            query = f"UPDATE merchandise SET {columns} WHERE id = %s"
+
+            cursor = self.connection.cursor()
+            cursor.execute(query, values)
+            self.connection.commit()
+
+            messagebox.showinfo("Success", "Merchandise updated successfully.")
+            self.tree.pack_forget()
+            self.total_label.pack_forget()
+            self.show_records_form()
+        except Error as e:
+            messagebox.showerror("Error", f"Failed to update merchandise: {e}")
+
+    def edit_selected_closeout(self):
+        selected = self.tree.focus()
+        if not selected:
+            messagebox.showwarning("Warning", "Please select a day closeout to edit.")
+            return
+
+        values = self.tree.item(selected, 'values')
+        self.selected_closeout = dict(zip(self.exported_columns, values))
+        self.show_closeout_edit_form()
+
+    def show_closeout_edit_form(self):
+        self.clear_main_frame()
+
+        tk.Label(self.main_frame, text="Edit Day Closeout", font=self.header_font).pack(pady=10)
+        self.closeout_fields = {}
+
+        for col, val in self.selected_closeout.items():
+            if col == "id":
+                continue  # Don't allow editing ID
+
+            tk.Label(self.main_frame, text=col, font=self.sub_font).pack()
+
+            if col == "date":
+                field = DateEntry(self.main_frame, width=28, background='darkblue',
+                                  foreground='white', borderwidth=2, date_pattern="yyyy-mm-dd")
+                field.set_date(val)
+            elif col == "notes":
+                field = tk.Text(self.main_frame, width=40, height=4)
+                field.insert("1.0", val)
+            else:
+                field = tk.Entry(self.main_frame, width=30)
+                field.insert(0, val)
+
+            field.pack(pady=(0, 10))
+            self.closeout_fields[col] = field
+
+        tk.Button(self.main_frame, text="Save Changes", bg="green", fg="white",
+                  width=20, height=2, command=self.save_closeout_changes).pack(pady=20)
+
+    def save_closeout_changes(self):
+        try:
+            updated = {}
+            for col, widget in self.closeout_fields.items():
+                if col == "notes":
+                    updated[col] = widget.get("1.0", tk.END).strip()
+                else:
+                    updated[col] = widget.get()
+
+            closeout_id = self.selected_closeout["id"]
+
+            columns = ", ".join(f"{col} = %s" for col in updated.keys())
+            values = list(updated.values()) + [closeout_id]
+            query = f"UPDATE day_closeout SET {columns} WHERE id = %s"
+
+            cursor = self.connection.cursor()
+            cursor.execute(query, values)
+            self.connection.commit()
+
+            messagebox.showinfo("Success", "Closeout updated successfully.")
+            self.tree.pack_forget()
+            self.total_label.pack_forget()
+            self.show_records_form()
+        except Error as e:
+            messagebox.showerror("Error", f"Failed to update closeout: {e}")
 
     def export_to_csv(self):
         """
