@@ -40,7 +40,7 @@ class AlohaCorpApp(tk.Tk):
             self.connection = mysql.connector.connect(
                 host="localhost",    # or your host address
                 user="root",         # replace with your MySQL username
-                password="34691",     # replace with your MySQL password
+                password="root",     # replace with your MySQL password
                 database="triall"    # replace with your database name
             )
             if self.connection.is_connected():
@@ -1710,6 +1710,149 @@ class AlohaCorpApp(tk.Tk):
         self.total_label.pack(pady=(20, 20))
         self.total_label.pack_forget()  # Hide it initially
 
+    def show_records_form(self):
+        self.clear_main_frame()
+
+        heading_label = tk.Label(
+            self.main_frame,
+            text="View Records",
+            bg="white",
+            fg="black",
+            font=self.header_font
+        )
+        heading_label.pack(pady=(20, 5))
+
+        # Subheading
+        sub_label = tk.Label(
+            self.main_frame,
+            text="Select Records to View",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        sub_label.pack(pady=(0, 20))
+
+        # Location (dropdown)
+        location_label = tk.Label(
+            self.main_frame,
+            text="LOCATION",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        location_label.pack(pady=(0, 2))
+        self.location_var = tk.StringVar()
+        # Example location list
+        locations = ["Select", "Store 1", "Store 2", "Store 3"]
+        self.location_var.set(locations[0])
+        location_dropdown = ttk.Combobox(
+            self.main_frame,
+            textvariable=self.location_var,
+            values=locations,
+            state="readonly",
+            width=28
+        )
+        location_dropdown.pack(pady=(0, 10))
+
+        # Record Type
+        record_label = tk.Label(
+            self.main_frame,
+            text="RECORD TYPE",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        record_label.pack(pady=(0, 2))
+        self.record_var = tk.StringVar()
+        # Example records list
+        records = ["Select", "Invoices", "Expenses", "Merchandise", "Bonuses", "Day Closeouts", "In/Out Balances"]
+        self.record_var.set(records[0])
+        records_dropdown = ttk.Combobox(
+            self.main_frame,
+            textvariable=self.record_var,
+            values=records,
+            state="readonly",
+            width=28
+        )
+        records_dropdown.pack(pady=(0, 10))
+
+        # Start Date (DateEntry)
+        start_label = tk.Label(
+            self.main_frame,
+            text="START DATE",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        start_label.pack(pady=(0, 2))
+
+        self.start_date = DateEntry(
+            self.main_frame,
+            width=28,
+            background='darkblue',
+            foreground='white',
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
+        )
+        self.start_date.pack(pady=(0, 10))
+
+        # End Date (DateEntry)
+        end_label = tk.Label(
+            self.main_frame,
+            text="END DATE",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        end_label.pack(pady=(0, 2))
+        self.end_date = DateEntry(
+            self.main_frame,
+            width=28,
+            background='darkblue',
+            foreground='white',
+            borderwidth=2,
+            date_pattern="yyyy-mm-dd",
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day
+        )
+        self.end_date.pack(pady=(0, 20))
+
+        # Submit button – same style as in Add Employee form.
+        submit_button = tk.Button(
+            self.main_frame,
+            text="Submit",
+            bg="black",
+            fg="white",
+            width=20,
+            height=2,
+            command=self.process_records
+        )
+        submit_button.pack(pady=10)
+
+        export_button = tk.Button(
+            self.main_frame,
+            text="Export to CSV",
+            bg="black",
+            fg="white",
+            width=20,
+            height=2,
+            command=self.export_to_csv
+        )
+        export_button.pack(pady=10)
+
+        # Create the Treeview widget once
+        self.tree = ttk.Treeview(self.page_frame, show='headings')
+        self.tree.pack(fill=tk.BOTH, expand=True)
+        self.tree.pack_forget()  # Hide it initially
+
+        self.total_label = tk.Label(self.page_frame, text="", bg="white", fg="black", font=self.sub_font)
+        self.total_label.pack(pady=(20, 20))
+        self.total_label.pack_forget()  # Hide it initially
+
     def process_records(self):
         self.tree.pack_forget()
         self.tree = ttk.Treeview(self.page_frame, show='headings')
@@ -1719,63 +1862,54 @@ class AlohaCorpApp(tk.Tk):
         self.total_label = tk.Label(self.page_frame, text="", bg="white", fg="black", font=self.sub_font)
         self.total_label.pack(pady=(20, 20))
 
+        # 1) grab base filters
         location = self.location_var.get()
         record = self.record_var.get()
         start = self.start_date.get()
         end = self.end_date.get()
 
+        # 2) validate
         if not self.connection:
             messagebox.showwarning("Warning", "No database connection. This is a demo.")
             return
-
-        if not (location and record and start and end):
+        if record == "Select" or not (location and start and end):
             messagebox.showerror("Error", "All fields are required.")
             return
 
+        # 3) if invoices, store filters & show invoice-only form
         if record == "Invoices":
-            rec_type = "invoices"
-            date_name = "date_received"
-        elif record == "Expenses":
-            rec_type = "expenses"
-            date_name = "date"
-        elif record == "Merchandise":
-            rec_type = "merchandise"
-            date_name = "date"
-        elif record == "Bonuses":
-            rec_type = "employee_bonus"
-            date_name = "start_date"
-        elif record == "Day Closeouts":
-            rec_type = "day_closeout"
-            date_name = "date"
-        elif record == "In/Out Balances":
-            rec_type = "in_out_bal"
-            date_name = "date"
+            self._invoice_base = {"location": location, "start": start, "end": end}
+            return self.show_invoice_filters()
+
+        # 4) generic lookup for other record types
+        rec_map = {
+            "Expenses": ("expenses", "date"),
+            "Merchandise": ("merchandise", "date"),
+            "Bonuses": ("employee_bonus", "start_date"),
+            "Day Closeouts": ("day_closeout", "date"),
+            "In/Out Balances": ("in_out_bal", "date"),
+        }
+        rec_type, date_name = rec_map.get(record, (None, None))
+        if not rec_type:
+            return
 
         try:
             cursor = self.connection.cursor()
-            query = f"SELECT * FROM {rec_type} WHERE location = %s and {date_name} >= %s and {date_name} <= %s"
-            cursor.execute(query, (location, start, end))
+            sql = f"SELECT * FROM {rec_type} WHERE location=%s AND {date_name}>=%s AND {date_name}<=%s"
+            cursor.execute(sql, (location, start, end))
             rows = cursor.fetchall()
-
-            print(f"Fetched rows: {rows}")
-
             if not rows:
-                messagebox.showerror("Error",
-                                     "No balance records found.")
+                messagebox.showerror("Error", "No records found.")
                 return
 
-            col_names = [desc[0] for desc in cursor.description]
-
-            # ----------------------------
-            # **Store** for export:
+            cols = [d[0] for d in cursor.description]
             self.exported_data = rows
-            self.exported_columns = col_names
-            # ----------------------------
+            self.exported_columns = cols
 
-            self.tree["columns"] = col_names
+            self.tree["columns"] = cols
             self.tree.delete(*self.tree.get_children())
 
-            for col in col_names:
+            for col in cols:
                 self.tree.heading(col, text=col)
                 self.tree.column(col, width=100)
 
@@ -1784,12 +1918,22 @@ class AlohaCorpApp(tk.Tk):
 
             self.tree.pack(fill=tk.BOTH, expand=True)
 
+            # render table
+            self.tree.pack_forget()
+            self.tree = ttk.Treeview(self.page_frame, columns=cols, show='headings')
+            for c in cols:
+                self.tree.heading(c, text=c)
+                self.tree.column(c, width=100)
+            for r in rows:
+                self.tree.insert("", tk.END, values=r)
+            self.tree.pack(fill=tk.BOTH, expand=True)
 
+            # (Insert your Day Closeouts / sum logic here)
             # Update Treeview
-            self.tree["columns"] = col_names
+            self.tree["columns"] = cols
             self.tree.delete(*self.tree.get_children())
 
-            for col in col_names:
+            for col in cols:
                 self.tree.heading(col, text=col)
                 self.tree.column(col, width=100)
 
@@ -1816,8 +1960,10 @@ class AlohaCorpApp(tk.Tk):
 
                 profit = total_sum - total_expenses - total_merchandise
 
-                self.total_label.config(text=f"Cash Total: ${cash_sum:,.2f}      Credit Total: ${credit_sum:,.2f}      Gross Profit: ${total_sum:,.2f}      Net Profit: ${profit:,.2f}")
+                self.total_label.config(
+                    text=f"Cash Total: ${cash_sum:,.2f}      Credit Total: ${credit_sum:,.2f}      Gross Profit: ${total_sum:,.2f}      Net Profit: ${profit:,.2f}")
                 self.total_label.pack()
+
 
             elif record == "Invoices":
 
@@ -1836,17 +1982,17 @@ class AlohaCorpApp(tk.Tk):
                 amount_column_candidates = ['expense_value', 'merchandise_value', 'amount', 'bonus_amount', 'total']
                 amount_col_index = None
                 for candidate in amount_column_candidates:
-                    if candidate in col_names:
-                        amount_col_index = col_names.index(candidate)
+                    if candidate in cols:
+                        amount_col_index = cols.index(candidate)
                         break
 
                 if amount_col_index is not None:
                     total_sum = sum(float(row[amount_col_index]) for row in rows if row[amount_col_index] is not None)
-                    if col_names[amount_col_index] == "total":
+                    if cols[amount_col_index] == "total":
                         self.total_label.config(text=f"Total: ${total_sum:,.2f}")
                         self.total_label.pack()
                     else:
-                        self.total_label.config(text=f"Total {col_names[amount_col_index].capitalize()}: ${total_sum:,.2f}")
+                        self.total_label.config(text=f"Total {cols[amount_col_index].capitalize()}: ${total_sum:,.2f}")
                         self.total_label.pack()
                 else:
                     self.total_label.config(text="")
@@ -1855,6 +2001,83 @@ class AlohaCorpApp(tk.Tk):
         except Error as err:
             messagebox.showerror("Database Error", "Records not found")
 
+    def show_invoice_filters(self):
+        self.clear_main_frame()
+        tk.Label(self.main_frame, text="Invoices – Filters",
+                 bg="white", fg="black", font=self.header_font) \
+            .pack(pady=(20, 10))
+
+        # Status
+        tk.Label(self.main_frame, text="STATUS", bg="white", fg="black", font=self.sub_font) \
+            .pack(pady=(0, 2))
+        self.status_var = tk.StringVar(value="All")
+        ttk.Combobox(self.main_frame, textvariable=self.status_var,
+                     values=["All", "Paid", "Not Paid"], state="readonly", width=28) \
+            .pack(pady=(0, 10))
+
+        # Order by due date
+        tk.Label(self.main_frame, text="ORDER BY", bg="white", fg="black", font=self.sub_font) \
+            .pack(pady=(0, 2))
+        self.order_var = tk.StringVar(value="None")
+        ttk.Combobox(self.main_frame, textvariable=self.order_var,
+                     values=["None", "Due Date ↑", "Due Date ↓"], state="readonly", width=28) \
+            .pack(pady=(0, 20))
+
+        tk.Button(self.main_frame, text="Show Invoices", bg="black", fg="white",
+                  width=20, height=2, command=self.process_invoices_filter) \
+            .pack(pady=10)
+
+    def process_invoices_filter(self):
+        # pull base filters
+        base = getattr(self, "_invoice_base", {})
+        location = base.get("location", "")
+        start = base.get("start", "")
+        end = base.get("end", "")
+        status = self.status_var.get()
+        order = self.order_var.get()
+
+        # build query
+        sql = ("SELECT * FROM invoices "
+               "WHERE location=%s AND date_received>=%s AND date_received<=%s")
+        params = [location, start, end]
+        if status in ("Paid", "Not Paid"):
+            sql += " AND status=%s"
+            params.append(status)
+        if order != "None":
+            direction = "ASC" if order.endswith("↑") else "DESC"
+            sql += f" ORDER BY date_due {direction}"
+
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(sql, params)
+            rows = cursor.fetchall()
+            if not rows:
+                messagebox.showerror("Error", "No invoices found.")
+                return
+
+            cols = [d[0] for d in cursor.description]
+            self.exported_data = rows
+            self.exported_columns = cols
+
+            # render table
+            self.tree.pack_forget()
+            self.tree = ttk.Treeview(self.page_frame, columns=cols, show='headings')
+            for c in cols:
+                self.tree.heading(c, text=c)
+                self.tree.column(c, width=100)
+            for r in rows:
+                self.tree.insert("", tk.END, values=r)
+            self.tree.pack(fill=tk.BOTH, expand=True)
+
+            # sum unpaid
+            amt_idx = cols.index("amount")
+            stat_idx = cols.index("status")
+            total_unpaid = sum(float(r[amt_idx]) for r in rows if r[stat_idx] == "Not Paid")
+            self.total_label.config(text=f"Total Unpaid Invoices: ${total_unpaid:,.2f}")
+            self.total_label.pack(pady=10)
+
+        except Error as err:
+            messagebox.showerror("Database Error", str(err))
     def export_to_csv(self):
         """
         Exports the most recently fetched data (rows + column names)
