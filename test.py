@@ -11,28 +11,38 @@ import csv
 
 class AlohaCorpApp(tk.Tk):
     def __init__(self):
-        super().__init__()
-        self.title("Aloha Corp")
-        self.geometry("700x700")
-        self.bg_color = "#f7f9fc"
-        self.accent_color = "#007acc"
-        self.configure(bg=self.bg_color)
+        super().__init__()                        # call tk.Tk constructor
 
-        # Fonts
-        self.header_font = tkfont.Font(family="Segoe UI", size=18, weight="bold")
-        self.sub_font = tkfont.Font(family="Segoe UI", size=12)
+        # ── basic window setup ──────────────────────────────────────
+        self.title("Aloha Corp")                  # title shown on the title‑bar
+        self.geometry("700x700")                  # default window size (WxH)
 
-        # Mode flag: "login" or "create"
-        self.current_mode = None
+        # ── theme colours & overall styling ─────────────────────────
+        self.bg_color     = "#f7f9fc"             # light gray‑blue background
+        self.accent_color = "#007acc"             # brand accent (links, headers)
+        self.configure(bg=self.bg_color)          # apply bg to root window
 
-        # For store or role selection
-        self.selected_store = None
-        self.selected_role = None
+        # ── font presets reused all over the UI ─────────────────────
+        self.header_font = tkfont.Font(
+            family="Segoe UI", size=18, weight="bold"
+        )
+        self.sub_font    = tkfont.Font(
+            family="Segoe UI", size=12
+        )
 
-        self.style = ttk.Style(self)
-        self.style.theme_use("clam")  # Try 'alt' or 'default' too
-        self.style.configure("TButton", font=("Segoe UI", 10), padding=6)
-        self.style.configure("TLabel", background=self.bg_color)
+        # ── state flags that change as the user navigates ───────────
+        self.current_mode   = None   # "login" or "create" (welcome page default)
+        self.selected_store = None   # store chosen in login flow
+        self.selected_role  = None   # role chosen in create‑account flow
+
+        # ── ttk theme + widget defaults ─────────────────────────────
+        self.style = ttk.Style(self)             # style object bound to root
+        self.style.theme_use("clam")             # nicer than default “alt”
+        self.style.configure("TButton",
+                             font=("Segoe UI", 10),
+                             padding=6)          # consistent ttk buttons
+        self.style.configure("TLabel",
+                             background=self.bg_color)  # labels get window bg
 
         # ----------------------------------------------------------------
         # DATABASE CONNECTION & TABLE CREATION
