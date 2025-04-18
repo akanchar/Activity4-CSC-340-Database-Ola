@@ -7,52 +7,42 @@ import bcrypt
 from tkcalendar import DateEntry
 from datetime import datetime
 import csv
-
+from datetime import datetime, timedelta
 
 class AlohaCorpApp(tk.Tk):
     def __init__(self):
-        super().__init__()                        # call tk.Tk constructor
+        super().__init__()
+        self.title("Aloha Corp")
+        self.geometry("700x700")
+        self.bg_color = "#f7f9fc"
+        self.accent_color = "#007acc"
+        self.configure(bg=self.bg_color)
 
-        # ── basic window setup ──────────────────────────────────────
-        self.title("Aloha Corp")                  # title shown on the title‑bar
-        self.geometry("700x700")                  # default window size (WxH)
+        # Fonts
+        self.header_font = tkfont.Font(family="Segoe UI", size=18, weight="bold")
+        self.sub_font = tkfont.Font(family="Segoe UI", size=12)
 
-        # ── theme colours & overall styling ─────────────────────────
-        self.bg_color     = "#f7f9fc"             # light gray‑blue background
-        self.accent_color = "#007acc"             # brand accent (links, headers)
-        self.configure(bg=self.bg_color)          # apply bg to root window
+        # Mode flag: "login" or "create"
+        self.current_mode = None
 
-        # ── font presets reused all over the UI ─────────────────────
-        self.header_font = tkfont.Font(
-            family="Segoe UI", size=18, weight="bold"
-        )
-        self.sub_font    = tkfont.Font(
-            family="Segoe UI", size=12
-        )
+        # For store or role selection
+        self.selected_store = None
+        self.selected_role = None
 
-        # ── state flags that change as the user navigates ───────────
-        self.current_mode   = None   # "login" or "create" (welcome page default)
-        self.selected_store = None   # store chosen in login flow
-        self.selected_role  = None   # role chosen in create‑account flow
-
-        # ── ttk theme + widget defaults ─────────────────────────────
-        self.style = ttk.Style(self)             # style object bound to root
-        self.style.theme_use("clam")             # nicer than default “alt”
-        self.style.configure("TButton",
-                             font=("Segoe UI", 10),
-                             padding=6)          # consistent ttk buttons
-        self.style.configure("TLabel",
-                             background=self.bg_color)  # labels get window bg
+        self.style = ttk.Style(self)
+        self.style.theme_use("clam")  # Try 'alt' or 'default' too
+        self.style.configure("TButton", font=("Segoe UI", 10), padding=6)
+        self.style.configure("TLabel", background=self.bg_color)
 
         # ----------------------------------------------------------------
         # DATABASE CONNECTION & TABLE CREATION
         # ----------------------------------------------------------------
         try:
             self.connection = mysql.connector.connect(
-                host="localhost",  # or your host address
-                user="root",  # replace with your MySQL username
-                password="34691",  # replace with your MySQL password
-                database="triall"  # replace with your database name
+                host="localhost",    # or your host address
+                user="root",         # replace with your MySQL username
+                password="root",     # replace with your MySQL password
+                database="triall"    # replace with your database name
             )
             if self.connection.is_connected():
                 print("Successfully connected to MySQL database")
@@ -75,7 +65,8 @@ class AlohaCorpApp(tk.Tk):
         # Create the top menu bar
         self.create_top_bar()
 
-        # self.initiate_login()
+        #self.initiate_login()
+
 
         # Main content area
         self.main_frame = tk.Frame(self, bg="white")
@@ -128,7 +119,7 @@ class AlohaCorpApp(tk.Tk):
             print(f"Error creating invoices table: {err}")
 
     def create_expenses_table(self):
-        create_table_query = """
+            create_table_query = """
             CREATE TABLE IF NOT EXISTS expenses (
     id INT AUTO_INCREMENT PRIMARY KEY,
     expense_type VARCHAR(255),
@@ -137,12 +128,12 @@ class AlohaCorpApp(tk.Tk):
     date DATE
 )
             """
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute(create_table_query)
-            self.connection.commit()
-        except Error as err:
-            print(f"Error creating expenses table: {err}")
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute(create_table_query)
+                self.connection.commit()
+            except Error as err:
+                print(f"Error creating expenses table: {err}")
 
     def create_in_out_bal_table(self):
         create_table_query = """
@@ -165,7 +156,7 @@ class AlohaCorpApp(tk.Tk):
             print(f"Error creating expenses table: {err}")
 
     def create_merchandise_table(self):
-        create_table_query = """
+            create_table_query = """
             CREATE TABLE IF NOT EXISTS merchandise (
     id INT AUTO_INCREMENT PRIMARY KEY,
     merchandise_type VARCHAR(255),
@@ -174,15 +165,15 @@ class AlohaCorpApp(tk.Tk):
     date DATE
 )
             """
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute(create_table_query)
-            self.connection.commit()
-        except Error as err:
-            print(f"Error creating merchandise table: {err}")
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute(create_table_query)
+                self.connection.commit()
+            except Error as err:
+                print(f"Error creating merchandise table: {err}")
 
     def create_withdrawals_table(self):
-        create_table_query = """
+            create_table_query = """
             CREATE TABLE IF NOT EXISTS withdrawals (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255),
@@ -191,15 +182,15 @@ class AlohaCorpApp(tk.Tk):
     amount DECIMAL(10,2)
 )
             """
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute(create_table_query)
-            self.connection.commit()
-        except Error as err:
-            print(f"Error creating withdrawals table: {err}")
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute(create_table_query)
+                self.connection.commit()
+            except Error as err:
+                print(f"Error creating withdrawals table: {err}")
 
     def create_employee_bonus_table(self):
-        create_table_query = """
+            create_table_query = """
             CREATE TABLE IF NOT EXISTS employee_bonus (
     id INT AUTO_INCREMENT PRIMARY KEY,
     employee_id INT,
@@ -209,15 +200,15 @@ class AlohaCorpApp(tk.Tk):
     bonus_amount DECIMAL(10,2)
 )
             """
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute(create_table_query)
-            self.connection.commit()
-        except Error as err:
-            print(f"Error creating bonus table: {err}")
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute(create_table_query)
+                self.connection.commit()
+            except Error as err:
+                print(f"Error creating bonus table: {err}")
 
     def create_employee_rates_table(self):
-        create_table_query = """
+            create_table_query = """
             CREATE TABLE IF NOT EXISTS employee_rates (
     id INT AUTO_INCREMENT PRIMARY KEY,
     employee_id INT,
@@ -227,12 +218,12 @@ class AlohaCorpApp(tk.Tk):
     date DATE
 )
             """
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute(create_table_query)
-            self.connection.commit()
-        except Error as err:
-            print(f"Error creating rates table: {err}")
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute(create_table_query)
+                self.connection.commit()
+            except Error as err:
+                print(f"Error creating rates table: {err}")
 
     def create_payroll_table(self):
         create_table_query = """
@@ -257,7 +248,7 @@ class AlohaCorpApp(tk.Tk):
             print(f"Error creating payroll table: {err}")
 
     def create_day_closeout_table(self):
-        create_table_query = """
+            create_table_query = """
                 CREATE TABLE IF NOT EXISTS day_closeout (
     id INT AUTO_INCREMENT PRIMARY KEY,
     employee_id INT,
@@ -270,13 +261,13 @@ class AlohaCorpApp(tk.Tk):
     notes TEXT
 )
                 """
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute(create_table_query)
-            self.connection.commit()
-            print("Users table is ready.")
-        except Error as err:
-            print(f"Error creating users table: {err}")
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute(create_table_query)
+                self.connection.commit()
+                print("Users table is ready.")
+            except Error as err:
+                print(f"Error creating users table: {err}")
 
     def initiate_login(self):
         # function to create initial owner login
@@ -443,6 +434,7 @@ class AlohaCorpApp(tk.Tk):
     def show_welcome_screen(self):
         self.current_mode = None
         self.clear_main_frame()
+
 
         heading_label = tk.Label(
             self.main_frame,
@@ -628,8 +620,7 @@ class AlohaCorpApp(tk.Tk):
                 return
 
             user_id, stored_password, role = result
-            role = role.strip()
-            self.user_role = role  # keep the clean value
+            self.user_role = role
 
             # Verify the password using bcrypt
             if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
@@ -641,10 +632,13 @@ class AlohaCorpApp(tk.Tk):
 
                 # 2) Navigate to the appropriate home screen
                 if role == "Manager":
+                    self.user_role = "Manager"
                     self.show_manager_home()
                 elif role == "Owner":
+                    self.user_role = "Owner"
                     self.show_owner_home()
                 elif role == "Employee":
+                    self.user_role = "Employee"
                     self.show_employee_home()
                 else:
                     # For other roles, you could show a different screen
@@ -653,6 +647,8 @@ class AlohaCorpApp(tk.Tk):
                 messagebox.showerror("Login Error", "Incorrect password.")
         except Error as err:
             messagebox.showerror("Database Error", f"Error during login: {err}")
+
+
 
     def process_change_password(self):
         # Step 1: Retrieve form data
@@ -954,6 +950,7 @@ class AlohaCorpApp(tk.Tk):
             font=self.sub_font
         )
 
+
         sub_label.pack(pady=(0, 20))
 
         # Employee Username
@@ -991,6 +988,7 @@ class AlohaCorpApp(tk.Tk):
         diff_label.pack(pady=(0, 2))
         self.dayclose_diff_entry = tk.Entry(self.main_frame, width=30)
         self.dayclose_diff_entry.pack(pady=(0, 10))
+
 
         # Date (dropdown)
         date_label = tk.Label(self.main_frame, text="DATE", bg="white", fg="black", font=self.sub_font)
@@ -1136,6 +1134,7 @@ class AlohaCorpApp(tk.Tk):
             font=self.sub_font
         )
 
+
         sub_label.pack(pady=(0, 20))
 
         # Employee Username
@@ -1155,6 +1154,7 @@ class AlohaCorpApp(tk.Tk):
         out_label.pack(pady=(0, 2))
         self.out_balance_entry = tk.Entry(self.main_frame, width=30)
         self.out_balance_entry.pack(pady=(0, 10))
+
 
         # Clock-In Time
         cin_label = tk.Label(self.main_frame, text="CLOCK-IN TIME (HH:MM)", bg="white", fg="black", font=self.sub_font)
@@ -1268,6 +1268,7 @@ class AlohaCorpApp(tk.Tk):
             f"Clock-In: {clock_in}\nClock-Out: {clock_out}\nDate: {date_val}"
         )
 
+
         if not (emp_id and in_balance and out_balance and clock_in and clock_out):
             messagebox.showerror("Error", "All fields are required.")
             return
@@ -1376,6 +1377,7 @@ class AlohaCorpApp(tk.Tk):
             day=datetime.now().day
         )
         self.expense_date_var.pack(pady=(0, 10))
+
 
         # Submit button
         submit_button = tk.Button(
@@ -1503,6 +1505,9 @@ class AlohaCorpApp(tk.Tk):
             self.show_withdraw_form()
         elif option == "Payroll":
             self.show_payroll_form()
+        elif option == "View Records":
+            self.show_records_form()
+
         else:
             messagebox.showinfo("Manager Action", f"You clicked: {option}")
 
@@ -1601,6 +1606,9 @@ class AlohaCorpApp(tk.Tk):
     def show_records_form(self):
         self.clear_main_frame()
 
+        if hasattr(self, "edit_button") and self.edit_button.winfo_exists():
+            self.edit_button.destroy()
+
         heading_label = tk.Label(
             self.main_frame,
             text="View Records",
@@ -1653,11 +1661,7 @@ class AlohaCorpApp(tk.Tk):
         record_label.pack(pady=(0, 2))
         self.record_var = tk.StringVar()
         # Example records list
-        records = ["Select", "Invoices", "Expenses", "Merchandise",
-                   "Bonuses", "Day Closeouts", "In/Out Balances", "Payroll"]
-
-        if getattr(self, "user_role", "") == "Owner":
-            records.append("Withdrawals")  # Owners can now pick this
+        records = ["Select", "Invoices", "Expenses", "Merchandise", "Bonuses", "Day Closeouts", "In/Out Balances"]
         self.record_var.set(records[0])
         records_dropdown = ttk.Combobox(
             self.main_frame,
@@ -1800,8 +1804,7 @@ class AlohaCorpApp(tk.Tk):
         record_label.pack(pady=(0, 2))
         self.record_var = tk.StringVar()
         # Example records list
-        records = ["Select", "Invoices", "Expenses", "Merchandise", "Bonuses", "Day Closeouts", "In/Out Balances",
-                   "Payroll"]
+        records = ["Select", "Invoices", "Expenses", "Merchandise", "Bonuses", "Day Closeouts", "In/Out Balances", "Payroll"]
         self.record_var.set(records[0])
         records_dropdown = ttk.Combobox(
             self.main_frame,
@@ -1904,6 +1907,13 @@ class AlohaCorpApp(tk.Tk):
         start = self.start_date.get()
         end = self.end_date.get()
 
+        if getattr(self, "user_role", "Owner") == "Manager":
+            # Restrict to current month
+            today = datetime.today()
+            start = today.replace(day=1).strftime("%Y-%m-%d")
+            next_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1)
+            end = (next_month - timedelta(days=1)).strftime("%Y-%m-%d")
+
         # 2) validate
         if not self.connection:
             messagebox.showwarning("Warning", "No database connection. This is a demo.")
@@ -1924,8 +1934,7 @@ class AlohaCorpApp(tk.Tk):
             "Bonuses": ("employee_bonus", "start_date"),
             "Day Closeouts": ("day_closeout", "date"),
             "In/Out Balances": ("in_out_bal", "date"),
-            "Payroll": ("payroll", "start_date"),
-            "Withdrawals": ("withdrawals", None)
+            "Payroll": ("payroll", "start_date")
         }
         rec_type, date_name = rec_map.get(record, (None, None))
         if not rec_type:
@@ -1933,22 +1942,9 @@ class AlohaCorpApp(tk.Tk):
 
         try:
             cursor = self.connection.cursor()
-
-            # Build SQL differently if the table has no date column
-            if date_name:  # tables that have a date field
-                sql = (f"SELECT * FROM {rec_type} "
-                        f"WHERE location=%s AND {date_name}>=%s AND {date_name}<=%s")
-                params = (location, start, end)
-            else:  # withdrawals – no date filter
-                sql = f"SELECT * FROM {rec_type} WHERE location=%s"
-                params = (location,)
-
-            cursor.execute(sql, params)
+            sql = f"SELECT * FROM {rec_type} WHERE location=%s AND {date_name}>=%s AND {date_name}<=%s"
+            cursor.execute(sql, (location, start, end))
             rows = cursor.fetchall()
-            if not rows:
-                messagebox.showerror("Error", "No records found.")
-                return
-
             if not rows:
                 messagebox.showerror("Error", "No records found.")
                 return
@@ -1994,14 +1990,15 @@ class AlohaCorpApp(tk.Tk):
             self.tree.pack(fill=tk.BOTH, expand=True)
 
             if record == "Day Closeouts":
-                edit_button = tk.Button(
+                self.edit_button = tk.Button(
                     self.page_frame,
                     text="Edit Selected Closeout",
                     bg="darkblue",
                     fg="white",
                     command=self.edit_selected_closeout
                 )
-                edit_button.pack(pady=10)
+                self.edit_button.pack(pady=10)
+
                 total_sum = sum(float(row[4]) for row in rows if row[4] is not None)
                 cash_sum = sum(float(row[2]) for row in rows if row[2] is not None)
                 credit_sum = sum(float(row[3]) for row in rows if row[3] is not None)
@@ -2024,27 +2021,27 @@ class AlohaCorpApp(tk.Tk):
                 self.total_label.pack()
 
             elif record == "Merchandise":
-                edit_button = tk.Button(
+                self.edit_button = tk.Button(
                     self.page_frame,
                     text="Edit Selected Merchandise",
                     bg="darkblue",
                     fg="white",
                     command=self.edit_selected_merchandise
                 )
-                edit_button.pack(pady=10)
+                self.edit_button.pack(pady=10)
 
 
             elif record == "Expenses":
-                edit_button = tk.Button(
+                self.edit_button = tk.Button(
                     self.page_frame,
                     text="Edit Selected Expense",
                     bg="darkblue",
                     fg="white",
                     command=self.edit_selected_expense
                 )
-                edit_button.pack(pady=10)
+                self.edit_button.pack(pady=10)
 
-
+            
             elif record == "Invoices":
 
                 cursor = self.connection.cursor()
@@ -2057,20 +2054,14 @@ class AlohaCorpApp(tk.Tk):
                 self.total_label.pack()
 
             elif record == "Payroll":
-                edit_button = tk.Button(
+                self.edit_button = tk.Button(
                     self.page_frame,
                     text="Edit Selected Payroll",
                     bg="darkblue",
                     fg="white",
                     command=self.edit_selected_payroll
                 )
-                edit_button.pack(pady=10)
-
-            elif record == "Withdrawals":
-                amount_col = cols.index("amount")  # withdrawals.amount
-                total_withdrew = sum(float(r[amount_col]) for r in rows if r[amount_col] is not None)
-                self.total_label.config(text=f"Total Withdrawn: ${total_withdrew:,.2f}")
-                self.total_label.pack()
+                self.edit_button.pack(pady=10)
 
             else:
 
@@ -2165,14 +2156,14 @@ class AlohaCorpApp(tk.Tk):
                 self.tree.insert("", tk.END, values=r)
             self.tree.pack(fill=tk.BOTH, expand=True)
 
-            edit_button = tk.Button(
+            self.edit_button = tk.Button(
                 self.page_frame,
                 text="Edit Selected Invoice",
                 bg="darkblue",
                 fg="white",
                 command=self.edit_selected_invoice
             )
-            edit_button.pack(pady=10)
+            self.edit_button.pack(pady=10)
 
             # sum unpaid
             amt_idx = cols.index("amount")
@@ -2482,6 +2473,7 @@ class AlohaCorpApp(tk.Tk):
         except Error as e:
             messagebox.showerror("Error", f"Failed to update payroll: {e}")
 
+
     def export_to_csv(self):
         """
         Exports the most recently fetched data (rows + column names)
@@ -2636,6 +2628,7 @@ class AlohaCorpApp(tk.Tk):
         )
         status_dropdown.pack(pady=(0, 10))
 
+
         # Submit button – same style as in Add Employee form.
         submit_button = tk.Button(
             self.main_frame,
@@ -2647,6 +2640,7 @@ class AlohaCorpApp(tk.Tk):
             command=self.process_invoice
         )
         submit_button.pack(pady=10)
+
 
     def process_invoice(self):
         # For now, simply display the entered values.
@@ -2684,6 +2678,7 @@ class AlohaCorpApp(tk.Tk):
             self.go_back()  # Return to the previous screen
         except Error as err:
             messagebox.showerror("Database Error", "Invoice not added")
+
 
     def show_payroll_form(self):
         self.clear_main_frame()
@@ -2832,7 +2827,8 @@ class AlohaCorpApp(tk.Tk):
         bonus_input = self.payroll_bonus_entry.get().strip()
         from_date = self.from_date_entry.get()
         to_date = self.to_date_entry.get()
-        # multiple_weeks = self.multiple_weeks_var.get()
+        #multiple_weeks = self.multiple_weeks_var.get()
+
 
         # Validate required fields
         if not (store and emp_id and from_date and to_date):
@@ -2926,7 +2922,8 @@ class AlohaCorpApp(tk.Tk):
         except Error as err:
             messagebox.showerror("Database Error", f"Error inserting payroll record: {err}")
 
-    # from tkcalendar import DateEntry
+
+    #from tkcalendar import DateEntry
     def show_withdraw_form(self):
         """
         Displays a form for entering a withdrawal.
@@ -3127,6 +3124,8 @@ class AlohaCorpApp(tk.Tk):
         )
         self.merch_date_entry.pack(pady=(0, 20))
 
+
+
         # Submit button
         submit_button = tk.Button(
             self.main_frame,
@@ -3147,6 +3146,8 @@ class AlohaCorpApp(tk.Tk):
         merch_type = self.merch_type_entry.get()
         merch_value = self.merch_value_entry.get()
         location = self.selected_store
+
+
 
         date_val = self.merch_date_entry.get_date()
 
@@ -3174,6 +3175,7 @@ class AlohaCorpApp(tk.Tk):
             self.go_back()  # Return to the previous screen
         except Error as err:
             messagebox.showerror("Database Error", "Merchandise not added")
+
 
     def show_calc_bonus_form(self):
         """
@@ -3296,6 +3298,7 @@ class AlohaCorpApp(tk.Tk):
             command=self.process_calc_bonus
         )
         submit_button.pack()
+
 
     def show_set_rates_form(self):
         """
@@ -3580,7 +3583,17 @@ class AlohaCorpApp(tk.Tk):
         )
         role_dropdown.pack(pady=(0, 10))
 
-
+        # ID (not stored in the DB with this table structure)
+        emp_id_label = tk.Label(
+            self.main_frame,
+            text="ID",
+            bg="white",
+            fg="black",
+            font=self.sub_font
+        )
+        emp_id_label.pack(pady=(0, 2))
+        self.emp_id_entry = tk.Entry(self.main_frame, width=30)
+        self.emp_id_entry.pack(pady=(0, 10))
 
         # NAME
         name_label = tk.Label(
@@ -3620,55 +3633,54 @@ class AlohaCorpApp(tk.Tk):
 
     def process_add_employee(self):
         role = self.emp_role_var.get()
-        name = self.emp_name_entry.get().strip()
-        password = self.emp_pass_entry.get().strip()
+        _ignored_id = self.emp_id_entry.get()
+        name = self.emp_name_entry.get()
+        password = self.emp_pass_entry.get()
 
         if not self.connection:
             messagebox.showwarning("Warning", "No database connection. This is a demo.")
             return
+
         if not (role and name and password):
             messagebox.showerror("Error", "Role, Name, and Password are required.")
             return
 
         try:
             cursor = self.connection.cursor()
-            hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            insert_sql = "INSERT INTO users (name, password, role) VALUES (%s, %s, %s)"
-            cursor.execute(insert_sql, (name, hashed, role))
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            query = "INSERT INTO users (name, password, role) VALUES (%s, %s, %s)"
+            cursor.execute(query, (name, hashed_password, role))
             self.connection.commit()
-
-            new_id = cursor.lastrowid  # auto‑generated ID from MySQL
-
-            messagebox.showinfo(
-                "Success",
-                f"New user created!\n\nName: {name}\nRole: {role}\nAssigned ID: {new_id}"
-            )
-            self.go_back()
-
+            messagebox.showinfo("Success", f"New user '{name}' added with role '{role}'.")
+            self.go_back()  # Return to the previous screen
         except Error as err:
-            messagebox.showerror("Database Error", f"Could not create user: {err}")
+            messagebox.showerror("Database Error", f"Error creating user: {err}")
 
     # ----------------------------------------------------------------
     # NAVIGATION & MISC
     # ----------------------------------------------------------------
 
     def go_back(self):
-        # Hide any table widgets if present
-        if hasattr(self, "tree"):
-            self.tree.pack_forget()
+        self.tree.pack_forget()
+
+        if hasattr(self, "edit_button") and self.edit_button.winfo_exists():
+            self.edit_button.destroy()
+
+        # Only try to hide total_label if it exists
         if hasattr(self, "total_label"):
             self.total_label.pack_forget()
 
-        role = getattr(self, "user_role", None)
-
-        if role == "Manager":
-            self.show_manager_home()
-        elif role == "Owner":
-            self.show_owner_home()
-        elif role == "Employee":
-            self.show_employee_home()
+        if hasattr(self, "user_role"):
+            if self.user_role == "Manager":
+                self.show_manager_home()
+            elif self.user_role == "Owner":
+                self.show_owner_home()
+            elif self.user_role == "Employee":
+                self.show_employee_home()
+            else:
+                messagebox.showerror("Error", "Unknown role. Returning to welcome screen.")
+                self.show_welcome_screen()
         else:
-            # Either not logged in yet or role is unknown – just show welcome
             self.show_welcome_screen()
 
     # def option1_action(self):
