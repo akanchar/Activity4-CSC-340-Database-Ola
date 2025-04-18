@@ -229,7 +229,7 @@ class AlohaCorpApp(tk.Tk):
         CREATE TABLE IF NOT EXISTS payroll (
             id INT AUTO_INCREMENT PRIMARY KEY,
             employee_id INT,
-            store VARCHAR(255),
+            location VARCHAR(255),
             start_date DATE,
             end_date DATE,
             total_hours DECIMAL(10,2),
@@ -953,6 +953,12 @@ class AlohaCorpApp(tk.Tk):
         self.dayclose_emp_entry = tk.Entry(self.main_frame, width=30)
         self.dayclose_emp_entry.pack(pady=(0, 10))
 
+        # Employee Password
+        pass_label = tk.Label(self.main_frame, text="PASSWORD", bg="white", fg="black", font=self.sub_font)
+        pass_label.pack(pady=(0, 2))
+        self.dayclose_pass_entry = tk.Entry(self.main_frame, show="*", width=30)
+        self.dayclose_pass_entry.pack(pady=(0, 10))
+
         # Cash
         cash_label = tk.Label(self.main_frame, text="CASH", bg="white", fg="black", font=self.sub_font)
         cash_label.pack(pady=(0, 2))
@@ -1019,6 +1025,7 @@ class AlohaCorpApp(tk.Tk):
         validates the input, and inserts the record into the day_closeout table.
         """
         emp_id = self.dayclose_emp_entry.get()
+        password = self.dayclose_pass_entry.get()
         cash = self.dayclose_cash_entry.get()
         credit = self.dayclose_credit_entry.get()
         total = self.dayclose_total_entry.get()
@@ -1060,9 +1067,29 @@ class AlohaCorpApp(tk.Tk):
             return  # Ensure function exits on database error
 
         # Validate that all required fields are provided.
-        if not (emp_id and cash and credit and total and diff and date_val and location):
+        if not (emp_id and password and cash and credit and total and diff and date_val and location):
             messagebox.showerror("Error", "All fields are required.")
             return
+
+        try:
+            cursor = self.connection.cursor()
+            query = "SELECT id, password FROM users WHERE id = %s"
+            cursor.execute(query, (emp_id,))
+            result = cursor.fetchone()
+
+            if not result:
+                messagebox.showerror("Login Error", "Invalid username.")
+                return
+
+            user_id, stored_password = result
+
+            # Verify the password using bcrypt
+            if not bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
+                messagebox.showerror("Login Error", "Password does not match ID")
+                return
+
+        except Error as err:
+            messagebox.showerror("Login Error", "Password does not match ID")
 
         try:
             cursor = self.connection.cursor()
@@ -1765,7 +1792,7 @@ class AlohaCorpApp(tk.Tk):
         record_label.pack(pady=(0, 2))
         self.record_var = tk.StringVar()
         # Example records list
-        records = ["Select", "Invoices", "Expenses", "Merchandise", "Bonuses", "Day Closeouts", "In/Out Balances"]
+        records = ["Select", "Invoices", "Expenses", "Merchandise", "Bonuses", "Day Closeouts", "In/Out Balances", "Payroll"]
         self.record_var.set(records[0])
         records_dropdown = ttk.Combobox(
             self.main_frame,
@@ -1888,6 +1915,7 @@ class AlohaCorpApp(tk.Tk):
             "Bonuses": ("employee_bonus", "start_date"),
             "Day Closeouts": ("day_closeout", "date"),
             "In/Out Balances": ("in_out_bal", "date"),
+            "Payroll": ("payroll", "start_date")
         }
         rec_type, date_name = rec_map.get(record, (None, None))
         if not rec_type:
@@ -2795,7 +2823,7 @@ class AlohaCorpApp(tk.Tk):
         try:
             insert_query = """
                 INSERT INTO payroll 
-                (employee_id, store, start_date, end_date, total_hours, rate_per_hour, subtotal, bonus, total_payroll)
+                (employee_id, location, start_date, end_date, total_hours, rate_per_hour, subtotal, bonus, total_payroll)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             cursor.execute(insert_query, (
