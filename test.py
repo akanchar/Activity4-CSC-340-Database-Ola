@@ -2033,6 +2033,16 @@ class AlohaCorpApp(tk.Tk):
                 self.total_label.config(text=f"Total Unpaid Invoices: ${total_invoices:,.2f}")
                 self.total_label.pack()
 
+            elif record == "Payroll":
+                edit_button = tk.Button(
+                    self.page_frame,
+                    text="Edit Selected Payroll",
+                    bg="darkblue",
+                    fg="white",
+                    command=self.edit_selected_payroll
+                )
+                edit_button.pack(pady=10)
+
             else:
 
                 # Try to find and sum a relevant amount column
@@ -2386,6 +2396,63 @@ class AlohaCorpApp(tk.Tk):
             self.show_records_form()
         except Error as e:
             messagebox.showerror("Error", f"Failed to update closeout: {e}")
+
+    def edit_selected_payroll(self):
+        selected = self.tree.focus()
+        if not selected:
+            messagebox.showwarning("Warning", "Please select a payroll entry to edit.")
+            return
+
+        values = self.tree.item(selected, 'values')
+        self.selected_payroll = dict(zip(self.exported_columns, values))
+        self.show_payroll_edit_form()
+
+    def show_payroll_edit_form(self):
+        self.clear_main_frame()
+
+        tk.Label(self.main_frame, text="Edit Payroll Record", font=self.header_font).pack(pady=10)
+        self.payroll_fields = {}
+
+        for col, val in self.selected_payroll.items():
+            if col == "id":
+                continue  # Primary key shouldn't be editable
+
+            tk.Label(self.main_frame, text=col, font=self.sub_font).pack()
+
+            if "date" in col:
+                field = DateEntry(self.main_frame, width=28, background='darkblue',
+                                  foreground='white', borderwidth=2, date_pattern="yyyy-mm-dd")
+                field.set_date(val)
+            else:
+                field = tk.Entry(self.main_frame, width=30)
+                field.insert(0, val)
+
+            field.pack(pady=(0, 10))
+            self.payroll_fields[col] = field
+
+        tk.Button(self.main_frame, text="Save Changes", bg="green", fg="white",
+                  width=20, height=2, command=self.save_payroll_changes).pack(pady=20)
+
+    def save_payroll_changes(self):
+        try:
+            updated = {col: field.get() for col, field in self.payroll_fields.items()}
+            payroll_id = self.selected_payroll["id"]
+
+            columns = ", ".join(f"{col} = %s" for col in updated.keys())
+            values = list(updated.values()) + [payroll_id]
+            query = f"UPDATE payroll SET {columns} WHERE id = %s"
+
+            cursor = self.connection.cursor()
+            cursor.execute(query, values)
+            self.connection.commit()
+
+            messagebox.showinfo("Success", "Payroll record updated successfully.")
+            self.tree.pack_forget()
+            self.total_label.pack_forget()
+            self.show_records_form()
+        except Error as e:
+            messagebox.showerror("Error", f"Failed to update payroll: {e}")
+
 
     def export_to_csv(self):
         """
