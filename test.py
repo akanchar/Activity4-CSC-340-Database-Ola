@@ -2227,9 +2227,14 @@ class AlohaCorpApp(tk.Tk):
             values = list(updated.values()) + [invoice_id]
             query = f"UPDATE invoices SET {columns} WHERE id = %s"
 
-            cursor = self.connection.cursor()
-            cursor.execute(query, values)
-            self.connection.commit()
+
+            try:
+                self.connection.start_transaction()
+                cursor = self.connection.cursor()
+                cursor.execute(query, values)
+                self.connection.commit()
+            except mysql.connector.Error as err:
+                self.connection.rollback()
 
             messagebox.showinfo("Success", "Invoice updated successfully.")
             # Hide the old table and totals
@@ -2285,9 +2290,13 @@ class AlohaCorpApp(tk.Tk):
             values = list(updated.values()) + [expense_id]
             query = f"UPDATE expenses SET {columns} WHERE id = %s"
 
-            cursor = self.connection.cursor()
-            cursor.execute(query, values)
-            self.connection.commit()
+            try:
+                self.connection.start_transaction()
+                cursor = self.connection.cursor()
+                cursor.execute(query, values)
+                self.connection.commit()
+            except mysql.connector.Error as err:
+                self.connection.rollback()
 
             messagebox.showinfo("Success", "Expense updated successfully.")
             self.tree.pack_forget()
@@ -2341,9 +2350,13 @@ class AlohaCorpApp(tk.Tk):
             values = list(updated.values()) + [merch_id]
             query = f"UPDATE merchandise SET {columns} WHERE id = %s"
 
-            cursor = self.connection.cursor()
-            cursor.execute(query, values)
-            self.connection.commit()
+            try:
+                self.connection.start_transaction()
+                cursor = self.connection.cursor()
+                cursor.execute(query, values)
+                self.connection.commit()
+            except mysql.connector.Error as err:
+                self.connection.rollback()
 
             messagebox.showinfo("Success", "Merchandise updated successfully.")
             self.tree.pack_forget()
@@ -2406,9 +2419,13 @@ class AlohaCorpApp(tk.Tk):
             values = list(updated.values()) + [closeout_id]
             query = f"UPDATE day_closeout SET {columns} WHERE id = %s"
 
-            cursor = self.connection.cursor()
-            cursor.execute(query, values)
-            self.connection.commit()
+            try:
+                self.connection.start_transaction()
+                cursor = self.connection.cursor()
+                cursor.execute(query, values)
+                self.connection.commit()
+            except mysql.connector.Error as err:
+                self.connection.rollback()
 
             messagebox.showinfo("Success", "Closeout updated successfully.")
             self.tree.pack_forget()
@@ -2462,9 +2479,13 @@ class AlohaCorpApp(tk.Tk):
             values = list(updated.values()) + [payroll_id]
             query = f"UPDATE payroll SET {columns} WHERE id = %s"
 
-            cursor = self.connection.cursor()
-            cursor.execute(query, values)
-            self.connection.commit()
+            try:
+                self.connection.start_transaction()
+                cursor = self.connection.cursor()
+                cursor.execute(query, values)
+                self.connection.commit()
+            except mysql.connector.Error as err:
+                self.connection.rollback()
 
             messagebox.showinfo("Success", "Payroll record updated successfully.")
             self.tree.pack_forget()
