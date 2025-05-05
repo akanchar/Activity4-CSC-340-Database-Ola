@@ -10,6 +10,40 @@ import csv
 from datetime import datetime, timedelta
 
 class AlohaCorpApp(tk.Tk):
+    def show_toast(self, message, duration=2000):
+        # Create a borderless, always-on-top window
+        toast = tk.Toplevel(self)
+        toast.overrideredirect(True)
+        toast.attributes("-topmost", True)
+        toast.attributes("-alpha", 0.95)
+
+        # Inner frame with white background & gray border
+        frame = tk.Frame(toast, bg="white", bd=1, relief="solid")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # Message label, wrapped and left-aligned
+        lbl = tk.Label(
+            frame,
+            text=message,
+            bg="white",
+            fg="black",
+            font=("Segoe UI", 10),
+            wraplength=220,
+            justify="left"
+        )
+        lbl.pack(padx=12, pady=8)
+
+        # Force geometry calculation
+        toast.update_idletasks()
+
+        # Position in bottom-right, with a 20px margin
+        x = self.winfo_x() + self.winfo_width() - toast.winfo_width() - 20
+        y = self.winfo_y() + self.winfo_height() - toast.winfo_height() - 20
+        toast.geometry(f"+{x}+{y}")
+
+        # Auto-destroy after `duration` ms
+        toast.after(duration, toast.destroy)
+
     def __init__(self):
         super().__init__()
         self.title("Aloha Corp")
@@ -436,23 +470,23 @@ class AlohaCorpApp(tk.Tk):
         self.clear_main_frame()
 
 
-        heading_label = tk.Label(
-            self.main_frame,
-            text="Welcome",
-            bg="white",
-            fg="black",
-            font=self.header_font
-        )
-        heading_label.pack(pady=(40, 5))
-
-        sub_label = tk.Label(
-            self.main_frame,
-            text="Sign in to continue.",
-            bg="white",
-            fg="black",
-            font=self.sub_font
-        )
-        sub_label.pack(pady=(0, 20))
+        # heading_label = tk.Label(
+        #     self.main_frame,
+        #     text="Welcome",
+        #     bg="white",
+        #     fg="black",
+        #     font=self.header_font
+        # )
+        # heading_label.pack(pady=(40, 5))
+        #
+        # sub_label = tk.Label(
+        #     self.main_frame,
+        #     text="Sign in to continue.",
+        #     bg="white",
+        #     fg="black",
+        #     font=self.sub_font
+        # )
+        # sub_label.pack(pady=(0, 20))
 
         welcome_label = ttk.Label(
             self.main_frame,
@@ -628,7 +662,7 @@ class AlohaCorpApp(tk.Tk):
                 self.logged_in_user_id = user_id
                 self.logged_in_username = username  # store the username
 
-                messagebox.showinfo("Success", f"Welcome, {username}!")
+                self.show_toast(f"Welcome, {username}!")
 
                 # 2) Navigate to the appropriate home screen
                 if role == "Manager":
@@ -700,7 +734,7 @@ class AlohaCorpApp(tk.Tk):
             cursor.execute(update_query, (hashed_new_pass, user_id))
             self.connection.commit()
 
-            messagebox.showinfo("Success", "Password changed successfully!")
+            self.show_toast("Password changed successfully!")
             self.go_back()  # Return to the appropriate screen
 
         except Error as err:
@@ -922,7 +956,7 @@ class AlohaCorpApp(tk.Tk):
         elif option == "Enter Expense":
             self.show_expense_form()
         else:
-            messagebox.showinfo("Employee Action", f"You clicked: {option}")
+            self.show_toast("Employee Action", f"You clicked: {option}")
 
     def submit_employee_actions(self):
         messagebox.showinfo("Submit", "Employee actions submitted (placeholder).")
@@ -1106,7 +1140,7 @@ class AlohaCorpApp(tk.Tk):
             """
             cursor.execute(query, (emp_id, cash, credit, total, diff, date_val, notes, location))
             self.connection.commit()
-            messagebox.showinfo("Success", "Day closeout data added")
+            self.show_toast("Day closeout data added")
             self.go_back()  # Return to the previous screen
         except Error as err:
             messagebox.showerror("Database Error", "Day closeout data not added")
@@ -1321,7 +1355,7 @@ class AlohaCorpApp(tk.Tk):
                     """
             cursor.execute(query, (emp_id, in_balance, out_balance, clock_in, clock_out, date_val, location))
             self.connection.commit()
-            messagebox.showinfo("Success", "In/Out balance record inserted successfully.")
+            self.show_toast("In/Out balance record inserted successfully.")
             self.go_back()  # Optionally, navigate back to the previous screen.
         except Exception as e:
             messagebox.showerror("Database Error", f"Failed to insert record: {e}")
@@ -1418,7 +1452,7 @@ class AlohaCorpApp(tk.Tk):
             query = "INSERT INTO expenses (expense_type, expense_value, date, location) VALUES (%s, %s, %s, %s)"
             cursor.execute(query, (expense_type, expense_value, date_val, location))
             self.connection.commit()
-            messagebox.showinfo("Success", "Expense added")
+            self.show_toast("Expense added")
             self.go_back()  # Return to the previous screen
         except Error as err:
             messagebox.showerror("Database Error", "Expense not added")
@@ -1606,6 +1640,16 @@ class AlohaCorpApp(tk.Tk):
     def show_records_form(self):
         self.clear_main_frame()
 
+        for widget in self.page_frame.winfo_children():
+            widget.destroy()
+
+        # Clear old edit button if it exists
+        if hasattr(self, "edit_button") and self.edit_button.winfo_exists():
+            self.edit_button.destroy()
+            self.edit_button = None
+
+        self.clear_main_frame()
+
         if hasattr(self, "edit_button") and self.edit_button.winfo_exists():
             self.edit_button.destroy()
 
@@ -1752,6 +1796,14 @@ class AlohaCorpApp(tk.Tk):
     def show_records_form(self):
         self.clear_main_frame()
 
+        for widget in self.page_frame.winfo_children():
+            widget.destroy()
+
+        # Clear old edit button if it exists
+        if hasattr(self, "edit_button") and self.edit_button.winfo_exists():
+            self.edit_button.destroy()
+            self.edit_button = None
+
         heading_label = tk.Label(
             self.main_frame,
             text="View Records",
@@ -1893,6 +1945,7 @@ class AlohaCorpApp(tk.Tk):
         self.total_label.pack_forget()  # Hide it initially
 
     def process_records(self):
+
         self.tree.pack_forget()
         self.tree = ttk.Treeview(self.page_frame, show='headings')
         self.tree.pack(fill=tk.BOTH, expand=True)
@@ -2227,16 +2280,11 @@ class AlohaCorpApp(tk.Tk):
             values = list(updated.values()) + [invoice_id]
             query = f"UPDATE invoices SET {columns} WHERE id = %s"
 
+            cursor = self.connection.cursor()
+            cursor.execute(query, values)
+            self.connection.commit()
 
-            try:
-                self.connection.start_transaction()
-                cursor = self.connection.cursor()
-                cursor.execute(query, values)
-                self.connection.commit()
-            except mysql.connector.Error as err:
-                self.connection.rollback()
-
-            messagebox.showinfo("Success", "Invoice updated successfully.")
+            self.show_toast("Invoice updated successfully.")
             # Hide the old table and totals
             self.tree.pack_forget()
             self.total_label.pack_forget()
@@ -2290,13 +2338,9 @@ class AlohaCorpApp(tk.Tk):
             values = list(updated.values()) + [expense_id]
             query = f"UPDATE expenses SET {columns} WHERE id = %s"
 
-            try:
-                self.connection.start_transaction()
-                cursor = self.connection.cursor()
-                cursor.execute(query, values)
-                self.connection.commit()
-            except mysql.connector.Error as err:
-                self.connection.rollback()
+            cursor = self.connection.cursor()
+            cursor.execute(query, values)
+            self.connection.commit()
 
             messagebox.showinfo("Success", "Expense updated successfully.")
             self.tree.pack_forget()
@@ -2350,15 +2394,11 @@ class AlohaCorpApp(tk.Tk):
             values = list(updated.values()) + [merch_id]
             query = f"UPDATE merchandise SET {columns} WHERE id = %s"
 
-            try:
-                self.connection.start_transaction()
-                cursor = self.connection.cursor()
-                cursor.execute(query, values)
-                self.connection.commit()
-            except mysql.connector.Error as err:
-                self.connection.rollback()
+            cursor = self.connection.cursor()
+            cursor.execute(query, values)
+            self.connection.commit()
 
-            messagebox.showinfo("Success", "Merchandise updated successfully.")
+            self.show_toast("Merchandise updated successfully.")
             self.tree.pack_forget()
             self.total_label.pack_forget()
             self.show_records_form()
@@ -2419,15 +2459,11 @@ class AlohaCorpApp(tk.Tk):
             values = list(updated.values()) + [closeout_id]
             query = f"UPDATE day_closeout SET {columns} WHERE id = %s"
 
-            try:
-                self.connection.start_transaction()
-                cursor = self.connection.cursor()
-                cursor.execute(query, values)
-                self.connection.commit()
-            except mysql.connector.Error as err:
-                self.connection.rollback()
+            cursor = self.connection.cursor()
+            cursor.execute(query, values)
+            self.connection.commit()
 
-            messagebox.showinfo("Success", "Closeout updated successfully.")
+            self.show_toast("Closeout updated successfully.")
             self.tree.pack_forget()
             self.total_label.pack_forget()
             self.show_records_form()
@@ -2479,15 +2515,11 @@ class AlohaCorpApp(tk.Tk):
             values = list(updated.values()) + [payroll_id]
             query = f"UPDATE payroll SET {columns} WHERE id = %s"
 
-            try:
-                self.connection.start_transaction()
-                cursor = self.connection.cursor()
-                cursor.execute(query, values)
-                self.connection.commit()
-            except mysql.connector.Error as err:
-                self.connection.rollback()
+            cursor = self.connection.cursor()
+            cursor.execute(query, values)
+            self.connection.commit()
 
-            messagebox.showinfo("Success", "Payroll record updated successfully.")
+            self.show_toast("Payroll record updated successfully.")
             self.tree.pack_forget()
             self.total_label.pack_forget()
             self.show_records_form()
@@ -2695,7 +2727,7 @@ class AlohaCorpApp(tk.Tk):
             query = "INSERT INTO invoices (status, date_received, company, invoice_number, amount, date_due, location) VALUES (%s, %s, %s, %s, %s, %s, %s)"
             cursor.execute(query, (status, date_received, company, invoice_num, amount, date_due, location))
             self.connection.commit()
-            messagebox.showinfo("Success", "Invoice added")
+            self.show_toast("Invoice added")
             self.go_back()  # Return to the previous screen
         except Error as err:
             messagebox.showerror("Database Error", "Invoice not added")
@@ -2939,7 +2971,7 @@ class AlohaCorpApp(tk.Tk):
 
             ))
             self.connection.commit()
-            messagebox.showinfo("Success", "Payroll record added successfully.")
+            self.show_toast("Payroll record added successfully.")
         except Error as err:
             messagebox.showerror("Database Error", f"Error inserting payroll record: {err}")
 
@@ -3062,7 +3094,7 @@ class AlohaCorpApp(tk.Tk):
             query = "INSERT INTO withdrawals (username, user_id, amount, location) VALUES (%s, %s, %s, %s)"
             cursor.execute(query, (username, user_id, amount, location))
             self.connection.commit()
-            messagebox.showinfo("Success", "Withdrawal added")
+            self.show_toast("Withdrawal added")
             self.go_back()  # Return to the previous screen
         except Error as err:
             messagebox.showerror("Database Error", "Withdrawal not added")
@@ -3192,7 +3224,7 @@ class AlohaCorpApp(tk.Tk):
             query = "INSERT INTO merchandise (merchandise_type, merchandise_value, date, location) VALUES (%s, %s, %s, %s)"
             cursor.execute(query, (merch_type, merch_value, date_val, location))
             self.connection.commit()
-            messagebox.showinfo("Success", "Merchandise added")
+            self.show_toast("Merchandise added")
             self.go_back()  # Return to the previous screen
         except Error as err:
             messagebox.showerror("Database Error", "Merchandise not added")
@@ -3464,7 +3496,7 @@ class AlohaCorpApp(tk.Tk):
             query = "INSERT INTO employee_rates (employee_id, location, bonus_rate, rate_per_hour, date) VALUES (%s, %s, %s, %s, %s)"
             cursor.execute(query, (emp_id, location, bonus_rate, rate_per_hour, date_val))
             self.connection.commit()
-            messagebox.showinfo("Success", "Rates added")
+            self.show_toast( "Rates added")
             self.go_back()  # Return to the previous screen
         except Error as err:
             messagebox.showerror("Database Error", "Rates not added")
@@ -3553,7 +3585,7 @@ class AlohaCorpApp(tk.Tk):
             cursor.execute(insert_query, (emp_id, location, start_date_val, end_date_val, bonus_amt))
             self.connection.commit()
 
-            messagebox.showinfo("Success", f"Bonus amount: ${bonus_amt:.2f}\nBonus data saved successfully.")
+            self.show_toast( f"Bonus amount: ${bonus_amt:.2f}\nBonus data saved successfully.")
             self.go_back()
 
         except Error as err:
@@ -3672,7 +3704,7 @@ class AlohaCorpApp(tk.Tk):
             query = "INSERT INTO users (name, password, role) VALUES (%s, %s, %s)"
             cursor.execute(query, (name, hashed_password, role))
             self.connection.commit()
-            messagebox.showinfo("Success", f"New user '{name}' added with role '{role}'.")
+            self.show_toast(f"New user '{name}' added with role '{role}'.")
             self.go_back()  # Return to the previous screen
         except Error as err:
             messagebox.showerror("Database Error", f"Error creating user: {err}")
@@ -3711,7 +3743,7 @@ class AlohaCorpApp(tk.Tk):
         # Clear any session-specific data if necessary here.
         self.user_role = None
         self.show_welcome_screen()
-        messagebox.showinfo("Sign Out", "You have been signed out successfully.")
+        self.show_toast("You have been signed out successfully.")
 
     def option2_action(self):
         print("Option 2 selected.")
